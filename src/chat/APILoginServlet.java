@@ -9,6 +9,7 @@ public class APILoginServlet extends HttpServlet {
   throws IOException, ServletException
   {
     // TODO
+    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
   }
 
   public void doDelete(HttpServletRequest request,
@@ -16,5 +17,6 @@ public class APILoginServlet extends HttpServlet {
   throws IOException, ServletException
   {
     // TODO
+    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
   }
 }
