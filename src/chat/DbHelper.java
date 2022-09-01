@@ -2,7 +2,7 @@ package chat;
 
 import java.sql.*;
 
-public class DbHelper {
+class DbHelper {
   public static void close(PreparedStatement statement, ResultSet results) {
     try {
       results.close();
@@ -53,4 +53,6 @@ public class DbHelper {
       close(statement, results);
     }
   }
+
+  private DbHelper() { }
 }
