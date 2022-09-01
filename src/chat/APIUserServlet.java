@@ -33,7 +33,7 @@ public class APIUserServlet extends HttpServlet {
       Class.forName("org.mariadb.jdbc.Driver");
       connection = DriverManager.getConnection
       ("jdbc:mariadb://localhost/chat", "root", "");
-      int userId = mapSessionIdToUserId(sessionId, connection);
+      int userId = DbHelper.mapSessionIdToUserId(sessionId, connection);
       if (userId < 0) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
@@ -41,7 +41,7 @@ public class APIUserServlet extends HttpServlet {
 
       String queryString = "SELECT name FROM users WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
-      statement.setString(1, userId);
+      statement.setInt(1, userId);
       results = statement.executeQuery();
       String userName = results.getString(1);
       response.setContentType("application/json");
@@ -57,7 +57,7 @@ public class APIUserServlet extends HttpServlet {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     finally {
-      close(statement, results);
+      DbHelper.close(statement, results);
       try {
         connection.close();
       } catch (Exception error) { }
