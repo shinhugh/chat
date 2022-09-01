@@ -8,29 +8,25 @@ import com.google.gson.*;
 
 public class APIUserServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     RequestHandler.handleRequestWithSession(request, response,
     new GetRequestHandlerCallback());
   }
 
   public void doPost(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
-    // TODO
-    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+  throws IOException, ServletException {
+    RequestHandler.handleRequest(request, response,
+    new PostRequestHandlerCallback());
   }
 
   public void doPut(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     RequestHandler.handleRequestWithSession(request, response,
     new PutRequestHandlerCallback());
   }
 
   public void doDelete(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     RequestHandler.handleRequestWithSession(request, response,
     new DeleteRequestHandlerCallback());
   }
@@ -65,7 +61,10 @@ public class APIUserServlet extends HttpServlet {
     }
   }
 
-  // TODO: Implement PostRequestHandlerCallback
+  private class PostRequestHandlerCallback
+  implements RequestHandlerCallback {
+    // TODO
+  }
 
   private class PutRequestHandlerCallback
   implements RequestWithSessionHandlerCallback {

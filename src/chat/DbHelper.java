@@ -13,7 +13,8 @@ class DbHelper {
   }
 
   public static int mapSessionIdToUserId(String sessionId,
-  Connection connection) throws SQLException {
+  Connection connection)
+  throws SQLException {
     PreparedStatement statement = null;
     ResultSet results = null;
     try {

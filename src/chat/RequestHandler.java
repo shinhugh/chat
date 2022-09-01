@@ -8,10 +8,15 @@ import java.util.*;
 import java.util.stream.*;
 
 class RequestHandler {
+  public static void handleRequest(HttpServletRequest request,
+  HttpServletResponse response, RequestHandlerCallback callback)
+  throws IOException, ServletException {
+    // TODO
+  }
+
   public static void handleRequestWithSession(HttpServletRequest request,
   HttpServletResponse response, RequestWithSessionHandlerCallback callback)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     Connection connection = null;
 
     try {
