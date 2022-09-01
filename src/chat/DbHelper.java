@@ -25,7 +25,7 @@ public class DbHelper {
       if (!results.next()) {
         return -1;
       }
-      int sessionExpiration = results.getInt(2);
+      long sessionExpiration = results.getLong(2);
       if (sessionExpiration <= System.currentTimeMillis()) {
         close(statement, results);
         queryString = "DELETE FROM sessions WHERE id = ?;";

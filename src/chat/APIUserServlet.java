@@ -21,7 +21,7 @@ public class APIUserServlet extends HttpServlet {
         return;
       }
       for (Cookie cookie : cookies) {
-        if (cookie.getName() == "session") {
+        if (cookie.getName().equals("session")) {
           sessionId = cookie.getValue();
           break;
         }
@@ -43,6 +43,7 @@ public class APIUserServlet extends HttpServlet {
       statement = connection.prepareStatement(queryString);
       statement.setInt(1, userId);
       results = statement.executeQuery();
+      results.next();
       String userName = results.getString(1);
       response.setContentType("application/json");
       PrintWriter out = response.getWriter();
