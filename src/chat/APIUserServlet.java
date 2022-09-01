@@ -4,6 +4,7 @@ import java.io.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.sql.*;
+import com.google.gson.*;
 
 public class APIUserServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -46,10 +47,13 @@ public class APIUserServlet extends HttpServlet {
         statement.setInt(1, requestData.userId);
         results = statement.executeQuery();
         results.next();
-        String userName = results.getString(1);
+        User user = new User();
+        user.name = results.getString(1);
+        Gson gson = new Gson();
+        String userJson = gson.toJson(user);
         responseData.statusCode = 200;
         responseData.contentType = "application/json";
-        responseData.body = "{\"name\":\"" + userName + "\"}\n";
+        responseData.body = userJson;
         return responseData;
       } catch (Exception error) {
         ResponseData responseData = new ResponseData();
@@ -67,13 +71,27 @@ public class APIUserServlet extends HttpServlet {
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
       PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
-        String userNameNew = "John"; // TODO: Parse request body for new name
+        if (requestData.body == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        User user = null;
+        try {
+          Gson gson = new Gson();
+          user = gson.fromJson(requestData.body, User.class);
+        } catch (Exception error) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        if (user.name == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
         String queryString = "UPDATE users SET name = ? WHERE id = ?;";
         statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, userNameNew);
+        statement.setString(1, user.name);
         statement.setInt(2, requestData.userId);
         int affectedCount = statement.executeUpdate();
         if (affectedCount != 1) {
@@ -87,7 +105,7 @@ public class APIUserServlet extends HttpServlet {
         responseData.statusCode = 500;
         return responseData;
       } finally {
-        DbHelper.close(statement, results);
+        DbHelper.close(statement, null);
       }
     }
   }
@@ -96,7 +114,6 @@ public class APIUserServlet extends HttpServlet {
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
       PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
         String queryString = "DELETE FROM users WHERE id = ?;";
@@ -114,8 +131,12 @@ public class APIUserServlet extends HttpServlet {
         responseData.statusCode = 500;
         return responseData;
       } finally {
-        DbHelper.close(statement, results);
+        DbHelper.close(statement, null);
       }
     }
+  }
+
+  private class User {
+    private String name;
   }
 }
