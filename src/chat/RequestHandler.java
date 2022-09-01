@@ -45,7 +45,10 @@ class RequestHandler {
       requestData.userId = userId;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
-      .collect(Collectors.joining(System.lineSeparator())); // TODO: Null?
+      .collect(Collectors.joining(System.lineSeparator()));
+      if ("".equals(requestData.body)) {
+        requestData.body = null;
+      }
       ResponseData responseData = callback.call(requestData);
 
       response.setStatus(responseData.statusCode);
