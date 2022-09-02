@@ -3,6 +3,12 @@ package chat;
 import java.sql.*;
 
 class DbHelper {
+  public static void close(Connection connection) {
+    try {
+      connection.close();
+    } catch (Exception error) { }
+  }
+
   public static void close(PreparedStatement statement, ResultSet results) {
     try {
       results.close();

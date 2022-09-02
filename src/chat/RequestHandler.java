@@ -11,7 +11,48 @@ class RequestHandler {
   public static void handleRequest(HttpServletRequest request,
   HttpServletResponse response, RequestHandlerCallback callback)
   throws IOException, ServletException {
-    // TODO
+    Connection connection = null;
+
+    try {
+      Class.forName("org.mariadb.jdbc.Driver");
+      connection = DriverManager.getConnection
+      ("jdbc:mariadb://localhost/chat", "root", "");
+
+      RequestData requestData = new RequestData();
+      requestData.connection = connection;
+      requestData.contentType = request.getContentType();
+      requestData.body = request.getReader().lines()
+      .collect(Collectors.joining(System.lineSeparator()));
+      if ("".equals(requestData.body)) {
+        requestData.body = null;
+      }
+      ResponseData responseData = callback.call(requestData);
+
+      response.setStatus(responseData.statusCode);
+      if (responseData.cookies != null) {
+        for (Map.Entry<String, String> entry
+        : responseData.cookies.entrySet()) {
+          response.addCookie(new Cookie(entry.getKey(), entry.getValue()));
+        }
+      }
+      if (responseData.contentType != null) {
+        response.setContentType(responseData.contentType);
+      }
+      if (responseData.body != null) {
+        PrintWriter out = response.getWriter();
+        out.print(responseData.body);
+      }
+    }
+
+    catch (SQLException error) {
+      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    }
+    catch (ClassNotFoundException error) {
+      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    }
+    finally {
+      DbHelper.close(connection);
+    }
   }
 
   public static void handleRequestWithSession(HttpServletRequest request,
@@ -79,9 +120,7 @@ class RequestHandler {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     finally {
-      try {
-        connection.close();
-      } catch (Exception error) { }
+      DbHelper.close(connection);
     }
   }
 

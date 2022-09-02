@@ -63,7 +63,57 @@ public class APIUserServlet extends HttpServlet {
 
   private class PostRequestHandlerCallback
   implements RequestHandlerCallback {
-    // TODO
+    public ResponseData call(RequestData requestData) {
+      PreparedStatement statement = null;
+      ResultSet results = null;
+      try {
+        ResponseData responseData = new ResponseData();
+        if (requestData.body == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        User user = null;
+        try {
+          Gson gson = new Gson();
+          user = gson.fromJson(requestData.body, User.class);
+        } catch (Exception error) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        if (user.name == null || user.pw == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        String queryString = "SELECT * FROM users WHERE name = ?;";
+        statement = requestData.connection.prepareStatement(queryString);
+        statement.setString(1, user.name);
+        results = statement.executeQuery();
+        if (results.next()) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
+        String salt = Utilities.generateRandomString((short) 16);
+        String pwSaltHash = Utilities.generateHash(user.pw, salt);
+        queryString = "INSERT INTO users (name, pw, salt) VALUES (?, ?, ?);";
+        statement = requestData.connection.prepareStatement(queryString);
+        statement.setString(1, user.name);
+        statement.setString(2, pwSaltHash);
+        statement.setString(3, salt);
+        int affectedCount = statement.executeUpdate();
+        if (affectedCount != 1) {
+          responseData.statusCode = 500;
+          return responseData;
+        }
+        responseData.statusCode = 200;
+        return responseData;
+      } catch (Exception error) {
+        ResponseData responseData = new ResponseData();
+        responseData.statusCode = 500;
+        return responseData;
+      } finally {
+        DbHelper.close(statement, results);
+      }
+    }
   }
 
   private class PutRequestHandlerCallback
@@ -84,6 +134,7 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
+        // TODO: Handle password change
         if (user.name == null) {
           responseData.statusCode = 400;
           return responseData;
@@ -137,5 +188,6 @@ public class APIUserServlet extends HttpServlet {
 
   private class User {
     private String name;
+    private String pw;
   }
 }
