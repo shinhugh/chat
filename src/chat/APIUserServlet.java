@@ -120,6 +120,7 @@ public class APIUserServlet extends HttpServlet {
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
       PreparedStatement statement = null;
+      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
         if (requestData.body == null) {
@@ -134,16 +135,47 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        // TODO: Handle password change
-        if (user.name == null) {
+        if (user.name == null && user.pw == null) {
           responseData.statusCode = 400;
           return responseData;
         }
-        String queryString = "UPDATE users SET name = ? WHERE id = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, user.name);
-        statement.setInt(2, requestData.userId);
-        int affectedCount = statement.executeUpdate();
+        int affectedCount = 0;
+        if (user.pw == null) {
+          String queryString = "UPDATE users SET name = ? WHERE id = ?;";
+          statement = requestData.connection.prepareStatement(queryString);
+          statement.setString(1, user.name);
+          statement.setInt(2, requestData.userId);
+          affectedCount = statement.executeUpdate();
+        } else if (user.name == null) {
+          String queryString = "SELECT salt FROM users WHERE id = ?;";
+          statement = requestData.connection.prepareStatement(queryString);
+          statement.setInt(1, requestData.userId);
+          results = statement.executeQuery();
+          results.next();
+          String salt = results.getString(1);
+          DbHelper.close(statement, results);
+          String pwSaltHash = Utilities.generateHash(user.pw, salt);
+          queryString = "UPDATE users SET pw = ? WHERE id = ?;";
+          statement = requestData.connection.prepareStatement(queryString);
+          statement.setString(1, pwSaltHash);
+          statement.setInt(2, requestData.userId);
+          affectedCount = statement.executeUpdate();
+        } else {
+          String queryString = "SELECT salt FROM users WHERE id = ?;";
+          statement = requestData.connection.prepareStatement(queryString);
+          statement.setInt(1, requestData.userId);
+          results = statement.executeQuery();
+          results.next();
+          String salt = results.getString(1);
+          DbHelper.close(statement, results);
+          String pwSaltHash = Utilities.generateHash(user.pw, salt);
+          queryString = "UPDATE users SET name = ?, pw = ? WHERE id = ?;";
+          statement = requestData.connection.prepareStatement(queryString);
+          statement.setString(1, user.name);
+          statement.setString(2, pwSaltHash);
+          statement.setInt(3, requestData.userId);
+          affectedCount = statement.executeUpdate();
+        }
         if (affectedCount != 1) {
           responseData.statusCode = 500;
           return responseData;
@@ -155,7 +187,7 @@ public class APIUserServlet extends HttpServlet {
         responseData.statusCode = 500;
         return responseData;
       } finally {
-        DbHelper.close(statement, null);
+        DbHelper.close(statement, results);
       }
     }
   }
