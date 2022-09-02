@@ -1,0 +1,134 @@
+* {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: #d8dee9;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: #2e3440;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+label {
+  font-size: large;
+}
+
+input {
+  font-size: x-large;
+  padding: 10px 15px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1px solid #4c566a;
+}
+
+:focus {
+  outline: 2px solid #4c566a;
+}
+
+#div_container {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 2px solid #4c566a;
+  max-height: 80%;
+  max-width: 80%;
+  overflow: hidden;
+}
+
+#div_tabs_container {
+  display: flex;
+  width: 100%;
+}
+
+#div_tabs_container>* {
+  flex: 1 1 0;
+  text-align: center;
+  padding: 20px 0;
+  font-size: large;
+  background: #4c566a;
+}
+
+.tab {
+  border: 0;
+}
+
+.tab:disabled {
+  background: #2e3440 !important;
+}
+
+.overflow_container {
+  overflow: auto;
+}
+
+.tab_body {
+  margin: 30px 35px 40px 35px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.fields_container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.submit_button {
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1px solid #4c566a;
+  background: #4c566a;
+  font-size: large;
+}
+
+#div_overlay_container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#p_overlay_notification {
+  padding: 10px 15px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1px solid #4c566a;
+  background: #2e3440;
+  text-align: center;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #4c566a;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #d8dee9;
+}

@@ -1,9 +1,38 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Root</title>
+  <title>Chat</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/public/assets/favicon.ico">
+  <link rel="stylesheet" href="/public/index.css">
+  <script src="/public/api.js" defer></script>
+  <script src="/public/index.js" defer></script>
 </head>
+
 <body>
-  <h1>Root</h1>
+  <div id="div_header_section">
+    <p id="p_page_title">Chat</p>
+    <div id="div_user_section">
+      <p id="p_user_name"></p>
+      <button id="button_logout_submit">Logout</button>
+    </div>
+  </div>
+
+  <div id="div_chat_history_section">
+  </div>
+
+  <div id="div_chat_composer_section">
+    <textarea id="textarea_chat_composer_content" rows="1" placeholder="Type a message" maxlength="256"></textarea>
+    <button id="button_chat_composer_submit">
+      <img id="img_send" src="/public/assets/send.png">
+    </button>
+  </div>
+
+  <div id="div_overlay_container">
+    <p id="p_overlay_notification" hidden></p>
+  </div>
 </body>
+
 </html>

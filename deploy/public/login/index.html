@@ -1,9 +1,60 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Login</title>
+  <title>Chat - Login</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/public/assets/favicon.ico">
+  <link rel="stylesheet" href="/public/login/index.css">
+  <script src="/public/api.js" defer></script>
+  <script src="/public/login/index.js" defer></script>
 </head>
+
 <body>
-  <h1>Login</h1>
+  <div id="div_container">
+
+    <div id="div_tabs_container">
+      <button id="button_login_tab" class="tab" disabled>Login</button>
+      <button id="button_signup_tab" class="tab">Sign up</button>
+    </div>
+
+    <div id="div_login_fields" class="overflow_container">
+      <div class="tab_body">
+        <div class="fields_container">
+          <div class="field">
+            <label>Name</label>
+            <input id="input_login_user_name" maxlength="16">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="input_login_user_pw" type="password">
+          </div>
+        </div>
+        <button id="button_login_submit" class="submit_button">Login</button>
+      </div>
+    </div>
+
+    <div id="div_signup_fields" class="overflow_container" hidden>
+      <div class="tab_body">
+        <div class="fields_container">
+          <div class="field">
+            <label>Name</label>
+            <input id="input_signup_user_name" maxlength="16">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="input_signup_user_pw" type="password">
+          </div>
+        </div>
+        <button id="button_signup_submit" class="submit_button">Sign up</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="div_overlay_container">
+    <p id="p_overlay_notification" hidden></p>
+  </div>
 </body>
+
 </html>
