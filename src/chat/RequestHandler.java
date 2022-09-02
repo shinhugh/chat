@@ -30,9 +30,15 @@ class RequestHandler {
 
       response.setStatus(responseData.statusCode);
       if (responseData.cookies != null) {
-        for (Map.Entry<String, String> entry
+        for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
-          response.addCookie(new Cookie(entry.getKey(), entry.getValue()));
+          Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
+          int lifetime
+          = (int) ((entry.getValue().getValue()
+          - System.currentTimeMillis()) / 1000);
+          cookie.setMaxAge(lifetime);
+          cookie.setPath("/");
+          response.addCookie(cookie);
         }
       }
       if (responseData.contentType != null) {
@@ -88,6 +94,7 @@ class RequestHandler {
 
       RequestWithSessionData requestData = new RequestWithSessionData();
       requestData.connection = connection;
+      requestData.sessionId = sessionId;
       requestData.userId = userId;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
@@ -99,9 +106,15 @@ class RequestHandler {
 
       response.setStatus(responseData.statusCode);
       if (responseData.cookies != null) {
-        for (Map.Entry<String, String> entry
+        for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
-          response.addCookie(new Cookie(entry.getKey(), entry.getValue()));
+          Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
+          int lifetime
+          = (int) ((entry.getValue().getValue()
+          - System.currentTimeMillis()) / 1000);
+          cookie.setMaxAge(lifetime);
+          cookie.setPath("/");
+          response.addCookie(cookie);
         }
       }
       if (responseData.contentType != null) {

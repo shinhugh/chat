@@ -217,9 +217,4 @@ public class APIUserServlet extends HttpServlet {
       }
     }
   }
-
-  private class User {
-    private String name;
-    private String pw;
-  }
 }

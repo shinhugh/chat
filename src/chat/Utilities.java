@@ -5,7 +5,7 @@ import java.nio.charset.*;
 import java.security.*;
 
 class Utilities {
-  public static String generateRandomString(short length) {
+  public static String generateRandomString(int length) {
     if (length < 1) {
       return "";
     }
@@ -28,10 +28,10 @@ class Utilities {
       return null;
     }
     byte[] bytes = digest.digest((pw + salt).getBytes(StandardCharsets.UTF_8));
-    return Utilities.bytesToHex(bytes);
+    return Utilities.hexString(bytes);
   }
 
-  public static String bytesToHex(byte[] bytes) {
+  public static String hexString(byte[] bytes) {
     byte[] builder = new byte[bytes.length * 2];
     for (int i = 0; i < bytes.length; i++) {
       int b = Byte.toUnsignedInt(bytes[i]);
