@@ -29,6 +29,10 @@ public class APILoginServlet extends HttpServlet {
       ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
+        if (requestData.body == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
         User user = null;
         try {
           Gson gson = new Gson();
