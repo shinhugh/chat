@@ -115,6 +115,9 @@ public class APILoginServlet extends HttpServlet {
           return responseData;
         }
         responseData.statusCode = 200;
+        responseData.cookies = new HashMap<String, Map.Entry<String, Long>>();
+        responseData.cookies.put("session",
+        new AbstractMap.SimpleEntry<String, Long>(null, (long) 0));
         return responseData;
       } catch (Exception error) {
         ResponseData responseData = new ResponseData();

@@ -32,6 +32,13 @@ class RequestHandler {
       if (responseData.cookies != null) {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
+          if (entry.getValue().getKey() == null) {
+            Cookie expiredCookie = new Cookie(entry.getKey(), "");
+            expiredCookie.setMaxAge(0);
+            expiredCookie.setPath("/");
+            response.addCookie(expiredCookie);
+            continue;
+          }
           Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
           int lifetime
           = (int) ((entry.getValue().getValue()
@@ -108,6 +115,13 @@ class RequestHandler {
       if (responseData.cookies != null) {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
+          if (entry.getValue().getKey() == null) {
+            Cookie expiredCookie = new Cookie(entry.getKey(), "");
+            expiredCookie.setMaxAge(0);
+            expiredCookie.setPath("/");
+            response.addCookie(expiredCookie);
+            continue;
+          }
           Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
           int lifetime
           = (int) ((entry.getValue().getValue()
