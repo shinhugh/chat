@@ -119,6 +119,7 @@ public class SocketMessageConnection {
 
     for (SocketMessageConnection connection : connections) {
       String outgoingMessageJson = null;
+      // TODO: Same user on different session should see as outgoing
       if (connection == this) {
         outgoingMessageJson = outgoingMessageOutJson;
       } else {
