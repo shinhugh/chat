@@ -4,9 +4,11 @@
 
 // Constants
 
-const userApi = '/api/user';
-const loginApi = '/api/login';
-const chatApi = '/api/chat';
+const userApiUrl = '/api/user';
+const loginApiUrl = '/api/login';
+const messageSocketUrl = window.location.protocol == 'http:'
+? 'ws://' + window.location.host + '/socket/message'
+: 'wss://' + window.location.host + '/socket/message';
 
 // --------------------------------------------------
 
@@ -21,55 +23,70 @@ const overlayNotification = document.getElementById('p_overlay_notification');
 
 // --------------------------------------------------
 
-// Sync messages
+// Open websocket for messages
 
-// var syncStartTime = null;
-// var syncFinishTime = new Date();
+var messageSocket = null;
+if ('WebSocket' in window) {
+  messageSocket = new WebSocket(messageSocketUrl);
+  messageSocket.onmessage = (data) => {
+    let obj = JSON.parse(data.data);
+    if (obj.outgoing) {
+      chatHistorySection.append(createOutgoingMessage(obj));
+    } else {
+      chatHistorySection.append(createIncomingMessage(obj));
+    }
+  };
 
-// apiRead(chatApi, {
-//   'finishTime': syncFinishTime.toISOString()
-// })
-// .then((obj) => {
-//   syncStartTime = syncFinishTime;
-//   appendToChatHistory(obj);
-// })
-// .catch(() => {
-//   console.error('Unable to fetch messages');
-// });
+  // DEBUG START
+  messageSocket.onopen = () => {
+    console.log('Socket opened');
+  };
+  messageSocket.onclose = () => {
+    console.log('Socket closed');
+  };
+  // DEBUG FINISH
+} else {
+  showOverlayNotification('Unable to connect', 2000);
+}
 
-// setInterval(() => {
-//   syncFinishTime = new Date();
-//   if (syncStartTime) {
-//     apiRead(chatApi, {
-//       'startTime': syncStartTime.toISOString(),
-//       'finishTime': syncFinishTime.toISOString()
-//     })
-//     .then((obj) => {
-//       syncStartTime = syncFinishTime;
-//       appendToChatHistory(obj);
-//     })
-//     .catch(() => {
-//       console.error('Unable to fetch messages');
-//     });
-//     return;
-//   }
-//   apiRead(chatApi, {
-//     'finishTime': syncFinishTime.toISOString()
-//   })
-//   .then((obj) => {
-//     syncStartTime = syncFinishTime;
-//     appendToChatHistory(obj);
-//   })
-//   .catch(() => {
-//     console.error('Unable to fetch messages');
-//   });
-// }, 200);
+// --------------------------------------------------
+
+// Send messages
+
+chatComposerSubmit.onclick = () => {
+  chatComposerSubmit.disabled = true;
+  let messageContent = chatComposerContent.value;
+  if (messageContent == '') {
+    chatComposerSubmit.disabled = false;
+    return;
+  }
+  if (!messageSocket || messageSocket.readyState != 1) {
+    showOverlayNotification('Unable to send message', 2000);
+    chatComposerSubmit.disabled = false;
+    return;
+  }
+  let messageObj = {
+    'content': messageContent
+  };
+  messageSocket.send(JSON.stringify(messageObj));
+  chatComposerContent.value = '';
+  chatComposerSubmit.disabled = false;
+};
+
+chatComposerContent.addEventListener('keypress', (event) => {
+  if (event.key == 'Enter') {
+    event.preventDefault();
+    chatComposerSubmit.click();
+  }
+});
+
+chatComposerContent.focus();
 
 // --------------------------------------------------
 
 // Display user name
 
-apiRead(userApi, null)
+apiRead(userApiUrl, null)
 .then((obj) => {
   userName.innerHTML = obj['name'];
 })
@@ -84,7 +101,7 @@ apiRead(userApi, null)
 
 logoutSubmit.onclick = () => {
   logoutSubmit.disabled = true;
-  apiDelete(loginApi, null)
+  apiDelete(loginApiUrl, null)
   .then(() => {
     location.href = '/login';
   })
@@ -95,41 +112,7 @@ logoutSubmit.onclick = () => {
 
 // --------------------------------------------------
 
-// Send messages
-
-// chatComposerSubmit.onclick = () => {
-//   chatComposerSubmit.disabled = true;
-//   let messageContent = chatComposerContent.value;
-//   if (messageContent == '') {
-//     chatComposerSubmit.disabled = false;
-//     return;
-//   }
-//   let obj = {
-//     'content': messageContent
-//   };
-//   apiCreate(chatApi, null, obj)
-//   .then(() => {
-//     chatComposerContent.value = '';
-//     chatComposerSubmit.disabled = false;
-//   })
-//   .catch(() => {
-//     showOverlayNotification('Unable to send message', 2000);
-//     chatComposerSubmit.disabled = false;
-//   });
-// };
-
-chatComposerContent.addEventListener('keypress', (event) => {
-  if (event.key == 'Enter') {
-    event.preventDefault();
-    chatComposerSubmit.click();
-  }
-});
-
-chatComposerContent.focus();
-
-// --------------------------------------------------
-
-// Create entry in message history UI
+// Create entry for message history UI
 
 function createIncomingMessage(obj) {
   let container = document.createElement('div');
@@ -182,44 +165,6 @@ const resizeObserver = new ResizeObserver(() => {
   }
 });
 resizeObserver.observe(chatHistorySection);
-
-// --------------------------------------------------
-
-// Append messages to the chat history UI
-
-function appendToChatHistory(obj) {
-  let indexReceived = 0;
-  let indexSent = 0;
-  while (indexReceived < obj['received'].length && indexSent < obj['sent'].length) {
-    let receivedMessage = obj['received'][indexReceived];
-    let sentMessage = obj['sent'][indexSent];
-    let receivedMessageTimestamp = Date.parse(receivedMessage.timestamp);
-    let sentMessageTimestamp = Date.parse(sentMessage.timestamp);
-    if (receivedMessageTimestamp < sentMessageTimestamp) {
-      chatHistorySection.append(createIncomingMessage(receivedMessage));
-      indexReceived++;
-    } else {
-      chatHistorySection.append(createOutgoingMessage(sentMessage));
-      indexSent++;
-    }
-  }
-  while (indexReceived < obj['received'].length) {
-    let receivedMessage = obj['received'][indexReceived];
-    chatHistorySection.append(createIncomingMessage(receivedMessage));
-    indexReceived++;
-  }
-  while (indexSent < obj['sent'].length) {
-    let sentMessage = obj['sent'][indexSent];
-    chatHistorySection.append(createOutgoingMessage(sentMessage));
-    indexSent++;
-  }
-  if ((indexReceived > 0 || indexSent > 0) && bottomScrolled) {
-    chatHistorySection.scroll({
-      'top': chatHistorySection.scrollHeight,
-      'behavior': 'smooth'
-    });
-  }
-}
 
 // --------------------------------------------------
 
