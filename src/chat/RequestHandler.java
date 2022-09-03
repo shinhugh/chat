@@ -45,6 +45,7 @@ class RequestHandler {
           - System.currentTimeMillis()) / 1000);
           cookie.setMaxAge(lifetime);
           cookie.setPath("/");
+          // TODO: SameSite
           response.addCookie(cookie);
         }
       }
@@ -128,6 +129,7 @@ class RequestHandler {
           - System.currentTimeMillis()) / 1000);
           cookie.setMaxAge(lifetime);
           cookie.setPath("/");
+          // TODO: SameSite
           response.addCookie(cookie);
         }
       }
