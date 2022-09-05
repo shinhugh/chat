@@ -34,27 +34,24 @@ class RequestHandler {
       if (responseData.cookies != null) {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
+          String cookieString = null;
           if (entry.getValue().getKey() == null) {
-            Cookie expiredCookie = new Cookie(entry.getKey(), "");
-            expiredCookie.setMaxAge(0);
-            expiredCookie.setPath("/");
-            response.addCookie(expiredCookie);
-            continue;
+            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
+          } else {
+            int maxAge
+            = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
+            / 1000);
+            Instant expiresInstant
+            = Instant.ofEpochMilli(entry.getValue().getValue());
+            String expiresString
+            = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
+            .withZone(ZoneId.of("GMT")).format(expiresInstant);
+
+            cookieString
+            = entry.getKey() + "=" + entry.getValue().getKey()
+            + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
+            + expiresString;
           }
-
-          int maxAge
-          = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
-          / 1000);
-          Instant expiresInstant
-          = Instant.ofEpochMilli(entry.getValue().getValue());
-          String expiresString
-          = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
-          .withZone(ZoneId.of("GMT")).format(expiresInstant);
-
-          String cookieString
-          = entry.getKey() + "=" + entry.getValue().getKey()
-          + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
-          + expiresString;
           response.setHeader("Set-Cookie", cookieString);
         }
       }
@@ -125,27 +122,24 @@ class RequestHandler {
       if (responseData.cookies != null) {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
+          String cookieString = null;
           if (entry.getValue().getKey() == null) {
-            Cookie expiredCookie = new Cookie(entry.getKey(), "");
-            expiredCookie.setMaxAge(0);
-            expiredCookie.setPath("/");
-            response.addCookie(expiredCookie);
-            continue;
+            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
+          } else {
+            int maxAge
+            = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
+            / 1000);
+            Instant expiresInstant
+            = Instant.ofEpochMilli(entry.getValue().getValue());
+            String expiresString
+            = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
+            .withZone(ZoneId.of("GMT")).format(expiresInstant);
+
+            cookieString
+            = entry.getKey() + "=" + entry.getValue().getKey()
+            + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
+            + expiresString;
           }
-
-          int maxAge
-          = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
-          / 1000);
-          Instant expiresInstant
-          = Instant.ofEpochMilli(entry.getValue().getValue());
-          String expiresString
-          = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
-          .withZone(ZoneId.of("GMT")).format(expiresInstant);
-
-          String cookieString
-          = entry.getKey() + "=" + entry.getValue().getKey()
-          + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
-          + expiresString;
           response.setHeader("Set-Cookie", cookieString);
         }
       }
