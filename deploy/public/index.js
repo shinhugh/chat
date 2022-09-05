@@ -30,16 +30,15 @@ if ('WebSocket' in window) {
   messageSocket = new WebSocket(messageSocketUrl);
   messageSocket.onmessage = (data) => {
     let obj = JSON.parse(data.data);
+    let chatEntry;
     if (obj.outgoing) {
-      chatHistorySection.append(createOutgoingMessage(obj));
+      chatEntry = createOutgoingMessage(obj);
     } else {
-      chatHistorySection.append(createIncomingMessage(obj));
+      chatEntry = createIncomingMessage(obj);
     }
+    chatHistorySection.append(chatEntry);
     if (bottomScrolled) {
-      chatHistorySection.scroll({
-        'top': chatHistorySection.scrollHeight,
-        'behavior': 'smooth'
-      });
+      chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
     }
   };
 
@@ -154,7 +153,7 @@ function createOutgoingMessage(obj) {
 
 var bottomScrolled = true;
 chatHistorySection.onscroll = () => {
-  bottomScrolled = chatHistorySection.scrollTop == (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
+  bottomScrolled = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
 };
 
 const resizeObserver = new ResizeObserver(() => {
