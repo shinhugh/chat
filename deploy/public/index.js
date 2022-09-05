@@ -35,6 +35,12 @@ if ('WebSocket' in window) {
     } else {
       chatHistorySection.append(createIncomingMessage(obj));
     }
+    if (bottomScrolled) {
+      chatHistorySection.scroll({
+        'top': chatHistorySection.scrollHeight,
+        'behavior': 'smooth'
+      });
+    }
   };
 
   messageSocket.onclose = () => {

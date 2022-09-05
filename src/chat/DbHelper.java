@@ -61,5 +61,23 @@ class DbHelper {
     }
   }
 
+  public static String getUserName(int userId, Connection connection)
+  throws SQLException {
+    PreparedStatement statement = null;
+    ResultSet results = null;
+    try {
+      String queryString = "SELECT name FROM users WHERE id = ?;";
+      statement = connection.prepareStatement(queryString);
+      statement.setInt(1, userId);
+      results = statement.executeQuery();
+      if (!results.next()) {
+        return null;
+      }
+      return results.getString(1);
+    } finally {
+      close(statement, results);
+    }
+  }
+
   private DbHelper() { }
 }

@@ -56,14 +56,50 @@ public class SocketMessageConnection {
         return;
       }
       userName = results.getString(1);
+
+      DbHelper.close(statement, results);
+      queryString = "SELECT user, timestamp, content FROM messages;";
+      statement = connection.prepareStatement(queryString);
+      results = statement.executeQuery();
+      Gson gson = new Gson();
+      HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
+      while (results.next()) {
+        String timestamp = Instant.ofEpochMilli(results.getLong(2)).toString();
+        String outgoingMessageJson = null;
+        if (results.getInt(1) == userId) {
+          MessageToClient outgoingMessageOut = new MessageToClient();
+          outgoingMessageOut.outgoing = true;
+          outgoingMessageOut.timestamp = timestamp;
+          outgoingMessageOut.content = results.getString(3);
+          outgoingMessageJson = gson.toJson(outgoingMessageOut);
+        } else {
+          MessageToClient outgoingMessageIn = new MessageToClient();
+          if (userNameCache.containsKey(results.getInt(1))) {
+            outgoingMessageIn.userName = userNameCache.get(results.getInt(1));
+          } else {
+            String messageUserName
+            = DbHelper.getUserName(results.getInt(1), connection);
+            userNameCache.put(results.getInt(1), messageUserName);
+            outgoingMessageIn.userName = messageUserName;
+          }
+          outgoingMessageIn.timestamp = timestamp;
+          outgoingMessageIn.content = results.getString(3);
+          outgoingMessageJson = gson.toJson(outgoingMessageIn);
+        }
+        try {
+          synchronized (this) {
+            session.getBasicRemote().sendText(outgoingMessageJson);
+          }
+        } catch (IOException error) {
+          close();
+        }
+      }
     } catch (SQLException error) {
       close();
     } finally {
       DbHelper.close(statement, results);
       DbHelper.close(connection);
     }
-
-    // TODO: Send messages stored in database
   }
 
   @OnClose
