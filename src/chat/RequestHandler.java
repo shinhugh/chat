@@ -6,6 +6,8 @@ import jakarta.servlet.http.*;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.*;
+import java.time.*;
+import java.time.format.*;
 
 class RequestHandler {
   public static void handleRequest(HttpServletRequest request,
@@ -39,14 +41,21 @@ class RequestHandler {
             response.addCookie(expiredCookie);
             continue;
           }
-          Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
-          int lifetime
-          = (int) ((entry.getValue().getValue()
-          - System.currentTimeMillis()) / 1000);
-          cookie.setMaxAge(lifetime);
-          cookie.setPath("/");
-          // TODO: SameSite
-          response.addCookie(cookie);
+
+          int maxAge
+          = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
+          / 1000);
+          Instant expiresInstant
+          = Instant.ofEpochMilli(entry.getValue().getValue());
+          String expiresString
+          = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
+          .withZone(ZoneId.of("GMT")).format(expiresInstant);
+
+          String cookieString
+          = entry.getKey() + "=" + entry.getValue().getKey()
+          + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
+          + expiresString;
+          response.setHeader("Set-Cookie", cookieString);
         }
       }
       if (responseData.contentType != null) {
@@ -123,14 +132,21 @@ class RequestHandler {
             response.addCookie(expiredCookie);
             continue;
           }
-          Cookie cookie = new Cookie(entry.getKey(), entry.getValue().getKey());
-          int lifetime
-          = (int) ((entry.getValue().getValue()
-          - System.currentTimeMillis()) / 1000);
-          cookie.setMaxAge(lifetime);
-          cookie.setPath("/");
-          // TODO: SameSite
-          response.addCookie(cookie);
+
+          int maxAge
+          = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
+          / 1000);
+          Instant expiresInstant
+          = Instant.ofEpochMilli(entry.getValue().getValue());
+          String expiresString
+          = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
+          .withZone(ZoneId.of("GMT")).format(expiresInstant);
+
+          String cookieString
+          = entry.getKey() + "=" + entry.getValue().getKey()
+          + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
+          + expiresString;
+          response.setHeader("Set-Cookie", cookieString);
         }
       }
       if (responseData.contentType != null) {
