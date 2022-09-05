@@ -25,11 +25,16 @@ public class SocketMessageConnection {
     this.session = session;
     connections.add(this);
     String sessionId = (String) this.session.getUserProperties().get("session");
+    try {
+      Class.forName("org.mariadb.jdbc.Driver");
+    } catch (ClassNotFoundException error) {
+      close();
+      return;
+    }
     Connection connection = null;
     PreparedStatement statement = null;
     ResultSet results = null;
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
       connection = DriverManager.getConnection
       ("jdbc:mariadb://localhost/chat", "root", "");
       String queryString = "SELECT user FROM sessions WHERE id = ?;";
@@ -51,7 +56,7 @@ public class SocketMessageConnection {
         return;
       }
       userName = results.getString(1);
-    } catch (Exception error) {
+    } catch (SQLException error) {
       close();
     } finally {
       DbHelper.close(statement, results);
@@ -67,6 +72,35 @@ public class SocketMessageConnection {
 
   @OnMessage
   public void onMessage(String incomingMessageJson) {
+    String sessionId = (String) this.session.getUserProperties().get("session");
+    try {
+      Class.forName("org.mariadb.jdbc.Driver");
+    } catch (ClassNotFoundException error) {
+      close();
+      return;
+    }
+    Connection dbConnection = null;
+    PreparedStatement statement = null;
+    ResultSet results = null;
+    try {
+      dbConnection = DriverManager.getConnection
+      ("jdbc:mariadb://localhost/chat", "root", "");
+      String queryString = "SELECT * FROM sessions WHERE id = ?;";
+      statement = dbConnection.prepareStatement(queryString);
+      statement.setString(1, sessionId);
+      results = statement.executeQuery();
+      if (!results.next()) {
+        close();
+        return;
+      }
+    } catch (SQLException error) {
+      close();
+      return;
+    } finally {
+      DbHelper.close(statement, results);
+      DbHelper.close(dbConnection);
+    }
+
     Gson gson = new Gson();
     MessageToServer incomingMessage = null;
     try {
@@ -83,10 +117,7 @@ public class SocketMessageConnection {
     long currMilli = currInstant.toEpochMilli();
     String timestamp = currInstant.toString();
 
-    Connection dbConnection = null;
-    PreparedStatement statement = null;
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
       dbConnection = DriverManager.getConnection
       ("jdbc:mariadb://localhost/chat", "root", "");
       String queryString
@@ -99,7 +130,7 @@ public class SocketMessageConnection {
       if (affectedCount != 1) {
         return;
       }
-    } catch (Exception error) {
+    } catch (SQLException error) {
       return;
     } finally {
       DbHelper.close(statement, null);

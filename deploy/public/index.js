@@ -37,14 +37,9 @@ if ('WebSocket' in window) {
     }
   };
 
-  // DEBUG START
-  messageSocket.onopen = () => {
-    console.log('Socket opened');
-  };
   messageSocket.onclose = () => {
-    console.log('Socket closed');
+    showOverlayNotification('Unable to connect', 2000);
   };
-  // DEBUG FINISH
 } else {
   showOverlayNotification('Unable to connect', 2000);
 }

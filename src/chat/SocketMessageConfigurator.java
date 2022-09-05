@@ -24,11 +24,18 @@ extends ServerEndpointConfig.Configurator {
       return;
     }
 
+    try {
+      Class.forName("org.mariadb.jdbc.Driver");
+    } catch (ClassNotFoundException error) {
+      response.getHeaders()
+      .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
+      return;
+    }
+
     Connection connection = null;
     PreparedStatement statement = null;
     ResultSet results = null;
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
       connection = DriverManager.getConnection
       ("jdbc:mariadb://localhost/chat", "root", "");
       String queryString = "SELECT * FROM sessions WHERE id = ?;";
@@ -40,7 +47,7 @@ extends ServerEndpointConfig.Configurator {
         .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
         return;
       }
-    } catch (Exception error) {
+    } catch (SQLException error) {
       response.getHeaders()
       .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
       return;
