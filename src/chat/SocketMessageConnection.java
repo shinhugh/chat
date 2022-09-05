@@ -62,6 +62,7 @@ public class SocketMessageConnection {
       DbHelper.close(statement, results);
       DbHelper.close(connection);
     }
+
     // TODO: Send messages stored in database
   }
 
