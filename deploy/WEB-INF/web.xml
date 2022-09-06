@@ -16,11 +16,6 @@
     </context-param>
 
     <servlet>
-      <servlet-name>test</servlet-name>
-      <servlet-class>chat.TestServlet</servlet-class>
-    </servlet>
-
-    <servlet>
       <servlet-name>apiUser</servlet-name>
       <servlet-class>chat.APIUserServlet</servlet-class>
     </servlet>
@@ -43,11 +38,6 @@
     <servlet-mapping>
       <servlet-name>default</servlet-name>
       <url-pattern>/public/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>test</servlet-name>
-      <url-pattern>/test</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
