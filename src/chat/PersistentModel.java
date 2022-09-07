@@ -86,7 +86,9 @@ class PersistentModel {
       if (!results.next()) {
         return null;
       }
+
       User user = new User();
+      user.id = userId;
       user.name = results.getString(1);
       user.pw = results.getString(2);
       user.salt = results.getString(3);
@@ -104,8 +106,41 @@ class PersistentModel {
 
   public User getUserByName(String userName)
   throws Exception {
-    return null;
-    // TODO
+    if (Utilities.nullOrEmpty(userName)) {
+      throw new IllegalArgumentException("Illegal argument");
+    }
+
+    if (!assureConnection()) {
+      throw new Exception("Cannot establish connection with database");
+    }
+
+    PreparedStatement statement = null;
+    ResultSet results = null;
+
+    try {
+      String queryString = "SELECT id, pw, salt FROM users WHERE name = ?;";
+      statement = connection.prepareStatement(queryString);
+      statement.setString(1, userName);
+      results = statement.executeQuery();
+      if (!results.next()) {
+        return null;
+      }
+
+      User user = new User();
+      user.id = results.getInt(1);
+      user.name = userName;
+      user.pw = results.getString(2);
+      user.salt = results.getString(3);
+      return user;
+    }
+
+    catch (SQLException error) {
+      throw new Exception("Encountered unexpected behavior with database");
+    }
+    finally {
+      close(results);
+      close(statement);
+    }
   }
 
   public User getUserBySessionId(String sessionId)
@@ -146,7 +181,9 @@ class PersistentModel {
         statement.executeUpdate();
         return null;
       }
+
       User user = new User();
+      user.id = userId;
       user.name = results.getString(1);
       user.pw = results.getString(2);
       user.salt = results.getString(3);
@@ -164,7 +201,10 @@ class PersistentModel {
 
   public boolean createUser(User user)
   throws Exception {
-    // TODO: Verify that argument is valid
+    if (user == null || Utilities.nullOrEmpty(user.name)
+    || Utilities.nullOrEmpty(user.pw) || Utilities.nullOrEmpty(user.salt)) {
+      throw new IllegalArgumentException("Illegal argument");
+    }
 
     if (!assureConnection()) {
       throw new Exception("Cannot establish connection with database");
@@ -189,8 +229,7 @@ class PersistentModel {
       statement.setString(1, user.name);
       statement.setString(2, user.pw);
       statement.setString(3, user.salt);
-      int affectedCount = statement.executeUpdate();
-      return affectedCount == 1;
+      return statement.executeUpdate() == 1;
     }
 
     catch (SQLException error) {
@@ -204,7 +243,10 @@ class PersistentModel {
 
   public boolean updateUser(User user)
   throws Exception {
-    // TODO: Verify that argument is valid
+    if (user == null || user.id < 1 || (Utilities.nullOrEmpty(user.name)
+    && Utilities.nullOrEmpty(user.pw) && Utilities.nullOrEmpty(user.salt))) {
+      throw new IllegalArgumentException("Illegal argument");
+    }
 
     if (!assureConnection()) {
       throw new Exception("Cannot establish connection with database");
@@ -214,32 +256,74 @@ class PersistentModel {
     ResultSet results = null;
 
     try {
-      String queryString = "SELECT * FROM users WHERE name = ?;";
-      statement = connection.prepareStatement(queryString);
-      statement.setString(1, user.name);
-      results = statement.executeQuery();
-      if (results.next()) {
-        return false;
+      if (!Utilities.nullOrEmpty(user.name)) {
+        String queryString = "SELECT * FROM users WHERE name = ?"
+        + " AND NOT id = ?;";
+        statement = connection.prepareStatement(queryString);
+        statement.setString(1, user.name);
+        statement.setInt(2, user.id);
+        results = statement.executeQuery();
+        if (results.next()) {
+          return false;
+        }
       }
 
-      close(results);
-      close(statement);
-      queryString = "UPDATE users SET name = ?, pw = ?, salt = ? WHERE id = ?;";
-      statement = connection.prepareStatement(queryString);
-      statement.setString(1, user.name);
-      statement.setString(2, user.pw);
-      statement.setString(3, user.salt);
-      statement.setInt(4, user.id);
-      int affectedCount = statement.executeUpdate();
-      return affectedCount == 1;
+      connection.setAutoCommit(false);
+
+      if (!Utilities.nullOrEmpty(user.name)) {
+        close(results);
+        close(statement);
+        String queryString = "UPDATE users SET name = ? WHERE id = ?;";
+        statement = connection.prepareStatement(queryString);
+        statement.setString(1, user.name);
+        statement.setInt(2, user.id);
+        if (statement.executeUpdate() != 1) {
+          return false;
+        }
+      }
+
+      if (!Utilities.nullOrEmpty(user.pw)) {
+        close(results);
+        close(statement);
+        String queryString = "UPDATE users SET pw = ? WHERE id = ?;";
+        statement = connection.prepareStatement(queryString);
+        statement.setString(1, user.pw);
+        statement.setInt(2, user.id);
+        if (statement.executeUpdate() != 1) {
+          connection.rollback();
+          return false;
+        }
+      }
+
+      if (!Utilities.nullOrEmpty(user.salt)) {
+        close(results);
+        close(statement);
+        String queryString = "UPDATE users SET salt = ? WHERE id = ?;";
+        statement = connection.prepareStatement(queryString);
+        statement.setString(1, user.salt);
+        statement.setInt(2, user.id);
+        if (statement.executeUpdate() != 1) {
+          connection.rollback();
+          return false;
+        }
+      }
+
+      connection.commit();
+      return true;
     }
 
-    catch (SQLException error) {
+    catch (SQLException errorA) {
+      try {
+        connection.rollback();
+      } catch (SQLException errorB) { }
       throw new Exception("Encountered unexpected behavior with database");
     }
     finally {
       close(results);
       close(statement);
+      try {
+        connection.setAutoCommit(true);
+      } catch (SQLException error) { }
     }
   }
 
@@ -259,8 +343,7 @@ class PersistentModel {
       String queryString = "DELETE FROM users WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
       statement.setInt(1, userId);
-      int affectedCount = statement.executeUpdate();
-      return affectedCount == 1;
+      return statement.executeUpdate() == 1;
     }
 
     catch (SQLException error) {
