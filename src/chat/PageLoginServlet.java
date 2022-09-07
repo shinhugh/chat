@@ -1,17 +1,14 @@
 package chat;
 
-import java.io.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import java.sql.*;
+import java.io.*;
 import java.nio.file.*;
 
 public class PageLoginServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException
   {
-    Connection connection = null;
-
     try {
       String sessionId = null;
       Cookie[] cookies = request.getCookies();
@@ -24,11 +21,8 @@ public class PageLoginServlet extends HttpServlet {
         }
       }
       if (sessionId != null) {
-        Class.forName("org.mariadb.jdbc.Driver");
-        connection = DriverManager.getConnection
-        ("jdbc:mariadb://localhost/chat", "root", "");
-        int userId = DbHelper.mapSessionIdToUserId(sessionId, connection);
-        if (userId >= 0) {
+        User user = PersistentModel.shared.getUserBySessionId(sessionId);
+        if (user != null) {
           response.setStatus(HttpServletResponse.SC_FOUND);
           response.setHeader("Location", "/");
           return;
@@ -38,8 +32,7 @@ public class PageLoginServlet extends HttpServlet {
       response.setStatus(HttpServletResponse.SC_OK);
       response.setContentType("text/html");
       PrintWriter out = response.getWriter();
-      String path
-      = System.getProperty("catalina.base")
+      String path = System.getProperty("catalina.base")
       + "/webapps/ROOT/public/login/index.html";
       BufferedReader fileReader = Files.newBufferedReader(Paths.get(path));
       String line = fileReader.readLine();
@@ -49,14 +42,8 @@ public class PageLoginServlet extends HttpServlet {
       }
     }
 
-    catch (SQLException error) {
+    catch (Exception error) {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    catch (ClassNotFoundException error) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    finally {
-      DbHelper.close(connection);
     }
   }
 }

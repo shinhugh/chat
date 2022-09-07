@@ -1,27 +1,19 @@
 package chat;
 
-import java.io.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import java.sql.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.*;
 import java.time.*;
 import java.time.format.*;
+import java.util.*;
+import java.util.stream.*;
 
 class RequestHandler {
   public static void handleRequest(HttpServletRequest request,
   HttpServletResponse response, RequestHandlerCallback callback)
   throws IOException, ServletException {
-    Connection connection = null;
-
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
-      connection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-
       RequestData requestData = new RequestData();
-      requestData.connection = connection;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
       .collect(Collectors.joining(System.lineSeparator()));
@@ -35,8 +27,9 @@ class RequestHandler {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
           String cookieString = null;
-          if (entry.getValue().getKey() == null) {
-            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
+          if (Utilities.nullOrEmpty(entry.getValue().getKey())) {
+            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict;"
+            + " Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
           } else {
             int maxAge
             = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
@@ -64,22 +57,14 @@ class RequestHandler {
       }
     }
 
-    catch (SQLException error) {
+    catch (Exception error) {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    catch (ClassNotFoundException error) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    finally {
-      DbHelper.close(connection);
     }
   }
 
   public static void handleRequestWithSession(HttpServletRequest request,
   HttpServletResponse response, RequestWithSessionHandlerCallback callback)
   throws IOException, ServletException {
-    Connection connection = null;
-
     try {
       String sessionId = null;
       Cookie[] cookies = request.getCookies();
@@ -93,23 +78,19 @@ class RequestHandler {
           break;
         }
       }
-      if (sessionId == null) {
+      if (Utilities.nullOrEmpty(sessionId)) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
-      Class.forName("org.mariadb.jdbc.Driver");
-      connection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-      int userId = DbHelper.mapSessionIdToUserId(sessionId, connection);
-      if (userId < 0) {
+      User user = PersistentModel.shared.getUserBySessionId(sessionId);
+      if (user == null) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
 
       RequestWithSessionData requestData = new RequestWithSessionData();
-      requestData.connection = connection;
       requestData.sessionId = sessionId;
-      requestData.userId = userId;
+      requestData.userId = user.id;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
       .collect(Collectors.joining(System.lineSeparator()));
@@ -123,8 +104,9 @@ class RequestHandler {
         for (Map.Entry<String, Map.Entry<String, Long>> entry
         : responseData.cookies.entrySet()) {
           String cookieString = null;
-          if (entry.getValue().getKey() == null) {
-            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
+          if (Utilities.nullOrEmpty(entry.getValue().getKey())) {
+            cookieString = entry.getKey() + "=; Path=/; SameSite=Strict;"
+            + " Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
           } else {
             int maxAge
             = (int) ((entry.getValue().getValue() - System.currentTimeMillis())
@@ -152,14 +134,8 @@ class RequestHandler {
       }
     }
 
-    catch (SQLException error) {
+    catch (Exception error) {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    catch (ClassNotFoundException error) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    }
-    finally {
-      DbHelper.close(connection);
     }
   }
 

@@ -1,9 +1,8 @@
 package chat;
 
-import java.util.*;
-import java.sql.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
+import java.util.*;
 
 public class SocketMessageConfigurator
 extends ServerEndpointConfig.Configurator {
@@ -11,51 +10,40 @@ extends ServerEndpointConfig.Configurator {
   public void modifyHandshake(ServerEndpointConfig config,
   HandshakeRequest request, HandshakeResponse response) {
     super.modifyHandshake(config, request, response);
-    List<String> cookies = request.getHeaders().get("cookie");
-    String session = null;
-    for (String cookie : cookies) {
-      if (cookie.startsWith("session") && cookie.length() > 8) {
-        session = cookie.substring(8);
+
+    try {
+      List<String> cookies = request.getHeaders().get("cookie");
+      String sessionId = null;
+      for (String cookie : cookies) {
+        if (cookie.startsWith("session") && cookie.length() > 8) {
+          sessionId = cookie.substring(8);
+        }
       }
-    }
-    if (session == null) {
-      response.getHeaders()
-      .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
-      return;
-    }
-
-    try {
-      Class.forName("org.mariadb.jdbc.Driver");
-    } catch (ClassNotFoundException error) {
-      response.getHeaders()
-      .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
-      return;
-    }
-
-    Connection connection = null;
-    PreparedStatement statement = null;
-    ResultSet results = null;
-    try {
-      connection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-      String queryString = "SELECT * FROM sessions WHERE id = ?;";
-      statement = connection.prepareStatement(queryString);
-      statement.setString(1, session);
-      results = statement.executeQuery();
-      if (!results.next()) {
-        response.getHeaders()
-        .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
+      if (Utilities.nullOrEmpty(sessionId)) {
+        dropConnection(response);
         return;
       }
-    } catch (SQLException error) {
-      response.getHeaders()
-      .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
-      return;
-    } finally {
-      DbHelper.close(statement, results);
-      DbHelper.close(connection);
+      chat.Session session = PersistentModel.shared.getSessionById(sessionId);
+      if (session == null) {
+        dropConnection(response);
+        return;
+      }
+      User user = PersistentModel.shared.getUserById(session.user);
+      if (user == null) {
+        dropConnection(response);
+        return;
+      }
+      config.getUserProperties().put("userId", user.id);
+      config.getUserProperties().put("sessionId", session.id);
     }
 
-    config.getUserProperties().put("session", session);
+    catch (Exception error) {
+      dropConnection(response);
+    }
+  }
+
+  private void dropConnection(HandshakeResponse response) {
+    response.getHeaders()
+    .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
   }
 }

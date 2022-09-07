@@ -1,104 +1,71 @@
 package chat;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.sql.*;
-import java.time.*;
+import com.google.gson.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
-import com.google.gson.*;
+import java.io.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-@ServerEndpoint(
-  value = "/socket/message",
-  configurator = SocketMessageConfigurator.class)
+@ServerEndpoint(value = "/socket/message",
+configurator = SocketMessageConfigurator.class)
 public class SocketMessageConnection {
   private static Set<SocketMessageConnection> connections
   = new CopyOnWriteArraySet<>();
 
-  private Session session;
-  private int userId;
-  private String userName;
+  private jakarta.websocket.Session wsSession;
+  private chat.Session session;
+  private User user;
 
   @OnOpen
-  public void onOpen(Session session) {
-    this.session = session;
-    connections.add(this);
-    String sessionId = (String) this.session.getUserProperties().get("session");
+  public void onOpen(jakarta.websocket.Session wsSession) {
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
-    } catch (ClassNotFoundException error) {
-      close();
-      return;
-    }
-    Connection connection = null;
-    PreparedStatement statement = null;
-    ResultSet results = null;
-    try {
-      connection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-      String queryString = "SELECT user FROM sessions WHERE id = ?;";
-      statement = connection.prepareStatement(queryString);
-      statement.setString(1, sessionId);
-      results = statement.executeQuery();
-      if (!results.next()) {
-        close();
-        return;
-      }
-      userId = results.getInt(1);
-      DbHelper.close(statement, results);
-      queryString = "SELECT name FROM users WHERE id = ?;";
-      statement = connection.prepareStatement(queryString);
-      statement.setInt(1, userId);
-      results = statement.executeQuery();
-      if (!results.next()) {
-        close();
-        return;
-      }
-      userName = results.getString(1);
+      this.wsSession = wsSession;
+      connections.add(this);
+      String sessionId = (String) this.wsSession.getUserProperties()
+      .get("sessionId");
+      session = PersistentModel.shared.getSessionById(sessionId);
+      int userId = (int) this.wsSession.getUserProperties().get("userId");
+      user = PersistentModel.shared.getUserById(userId);
 
-      DbHelper.close(statement, results);
-      queryString = "SELECT user, timestamp, content FROM messages;";
-      statement = connection.prepareStatement(queryString);
-      results = statement.executeQuery();
-      Gson gson = new Gson();
       HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
-      while (results.next()) {
-        String timestamp = Instant.ofEpochMilli(results.getLong(2)).toString();
+      Message[] messages = PersistentModel.shared.getMessages();
+      for (Message message : messages) {
+        Gson gson = new Gson();
+        String timestamp = Instant.ofEpochMilli(message.timestamp).toString();
         String outgoingMessageJson = null;
-        if (results.getInt(1) == userId) {
+        if (message.user == user.id) {
           MessageToClient outgoingMessageOut = new MessageToClient();
           outgoingMessageOut.outgoing = true;
           outgoingMessageOut.timestamp = timestamp;
-          outgoingMessageOut.content = results.getString(3);
+          outgoingMessageOut.content = message.content;
           outgoingMessageJson = gson.toJson(outgoingMessageOut);
         } else {
           MessageToClient outgoingMessageIn = new MessageToClient();
-          if (userNameCache.containsKey(results.getInt(1))) {
-            outgoingMessageIn.userName = userNameCache.get(results.getInt(1));
+          if (userNameCache.containsKey(message.user)) {
+            outgoingMessageIn.userName = userNameCache.get(message.user);
           } else {
-            String messageUserName
-            = DbHelper.getUserName(results.getInt(1), connection);
-            userNameCache.put(results.getInt(1), messageUserName);
-            outgoingMessageIn.userName = messageUserName;
+            User messageUser = PersistentModel.shared.getUserById(message.user);
+            userNameCache.put(message.user, messageUser.name);
+            outgoingMessageIn.userName = messageUser.name;
           }
           outgoingMessageIn.timestamp = timestamp;
-          outgoingMessageIn.content = results.getString(3);
+          outgoingMessageIn.content = message.content;
           outgoingMessageJson = gson.toJson(outgoingMessageIn);
         }
         try {
           synchronized (this) {
-            session.getBasicRemote().sendText(outgoingMessageJson);
+            this.wsSession.getBasicRemote().sendText(outgoingMessageJson);
           }
         } catch (IOException error) {
           close();
         }
       }
-    } catch (SQLException error) {
+    }
+
+    catch (Exception error) {
       close();
-    } finally {
-      DbHelper.close(statement, results);
-      DbHelper.close(connection);
     }
   }
 
@@ -109,96 +76,69 @@ public class SocketMessageConnection {
 
   @OnMessage
   public void onMessage(String incomingMessageJson) {
-    String sessionId = (String) this.session.getUserProperties().get("session");
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
-    } catch (ClassNotFoundException error) {
-      close();
-      return;
-    }
-    Connection dbConnection = null;
-    PreparedStatement statement = null;
-    ResultSet results = null;
-    try {
-      dbConnection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-      String queryString = "SELECT * FROM sessions WHERE id = ?;";
-      statement = dbConnection.prepareStatement(queryString);
-      statement.setString(1, sessionId);
-      results = statement.executeQuery();
-      if (!results.next()) {
+      session = PersistentModel.shared.getSessionById(session.id);
+      if (session == null) {
         close();
         return;
       }
-    } catch (SQLException error) {
+
+      Gson gson = new Gson();
+      MessageToServer incomingMessage = null;
+      try {
+        incomingMessage = gson.fromJson(incomingMessageJson,
+        MessageToServer.class);
+        if (incomingMessage == null
+        || Utilities.nullOrEmpty(incomingMessage.content)) {
+          return;
+        }
+      } catch (JsonSyntaxException error) {
+        return;
+      }
+
+      Instant currInstant = Instant.now();
+      long currMilli = currInstant.toEpochMilli();
+      String timestamp = currInstant.toString();
+
+      Message message = new Message();
+      message.user = user.id;
+      message.timestamp = currMilli;
+      message.content = incomingMessage.content;
+      if(!PersistentModel.shared.createMessage(message)) {
+        return;
+      }
+
+      MessageToClient outgoingMessageIn = new MessageToClient();
+      outgoingMessageIn.userName = user.name;
+      outgoingMessageIn.timestamp = timestamp;
+      outgoingMessageIn.content = incomingMessage.content;
+      String outgoingMessageInJson = gson.toJson(outgoingMessageIn);
+      MessageToClient outgoingMessageOut = new MessageToClient();
+      outgoingMessageOut.outgoing = true;
+      outgoingMessageOut.timestamp = timestamp;
+      outgoingMessageOut.content = incomingMessage.content;
+      String outgoingMessageOutJson = gson.toJson(outgoingMessageOut);
+
+      for (SocketMessageConnection connection : connections) {
+        String outgoingMessageJson = null;
+        if (connection.user.id == user.id) {
+          outgoingMessageJson = outgoingMessageOutJson;
+        } else {
+          outgoingMessageJson = outgoingMessageInJson;
+        }
+        try {
+          synchronized (connection) {
+            connection.wsSession.getBasicRemote().sendText(outgoingMessageJson);
+          }
+        } catch (IOException error) {
+          connection.close();
+        }
+      }
+    }
+
+    catch (Exception error) {
       close();
       return;
-    } finally {
-      DbHelper.close(statement, results);
-      DbHelper.close(dbConnection);
-    }
-
-    Gson gson = new Gson();
-    MessageToServer incomingMessage = null;
-    try {
-      incomingMessage
-      = gson.fromJson(incomingMessageJson, MessageToServer.class);
-      if (incomingMessage == null || incomingMessage.content == null) {
-        return;
-      }
-    } catch (Exception error) {
-      return;
-    }
-
-    Instant currInstant = Instant.now();
-    long currMilli = currInstant.toEpochMilli();
-    String timestamp = currInstant.toString();
-
-    try {
-      dbConnection = DriverManager.getConnection
-      ("jdbc:mariadb://localhost/chat", "root", "");
-      String queryString
-      = "INSERT INTO messages (user, timestamp, content) VALUES (?, ?, ?);";
-      statement = dbConnection.prepareStatement(queryString);
-      statement.setInt(1, userId);
-      statement.setLong(2, currMilli);
-      statement.setString(3, incomingMessage.content);
-      int affectedCount = statement.executeUpdate();
-      if (affectedCount != 1) {
-        return;
-      }
-    } catch (SQLException error) {
-      return;
-    } finally {
-      DbHelper.close(statement, null);
-      DbHelper.close(dbConnection);
-    }
-
-    MessageToClient outgoingMessageIn = new MessageToClient();
-    outgoingMessageIn.userName = userName;
-    outgoingMessageIn.timestamp = timestamp;
-    outgoingMessageIn.content = incomingMessage.content;
-    String outgoingMessageInJson = gson.toJson(outgoingMessageIn);
-    MessageToClient outgoingMessageOut = new MessageToClient();
-    outgoingMessageOut.outgoing = true;
-    outgoingMessageOut.timestamp = timestamp;
-    outgoingMessageOut.content = incomingMessage.content;
-    String outgoingMessageOutJson = gson.toJson(outgoingMessageOut);
-
-    for (SocketMessageConnection connection : connections) {
-      String outgoingMessageJson = null;
-      if (connection.userId == userId) {
-        outgoingMessageJson = outgoingMessageOutJson;
-      } else {
-        outgoingMessageJson = outgoingMessageInJson;
-      }
-      try {
-        synchronized (connection) {
-          connection.session.getBasicRemote().sendText(outgoingMessageJson);
-        }
-      } catch (IOException error) {
-        connection.close();
-      }
     }
   }
 
@@ -210,7 +150,7 @@ public class SocketMessageConnection {
   private void close() {
     connections.remove(this);
     try {
-      session.close();
+      wsSession.close();
     } catch (IOException error) { }
   }
 }

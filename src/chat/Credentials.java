@@ -1,8 +1,6 @@
 package chat;
 
-class User {
-  public int id;
+class Credentials {
   public String name;
   public String pw;
-  public String salt;
 }

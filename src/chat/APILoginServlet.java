@@ -1,11 +1,10 @@
 package chat;
 
-import java.io.*;
+import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import java.sql.*;
+import java.io.*;
 import java.util.*;
-import com.google.gson.*;
 
 public class APILoginServlet extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -25,63 +24,47 @@ public class APILoginServlet extends HttpServlet {
   private class PostRequestHandlerCallback
   implements RequestHandlerCallback {
     public ResponseData call(RequestData requestData) {
-      PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
-        if (requestData.body == null) {
+        if (Utilities.nullOrEmpty(requestData.body)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = null;
+        Credentials credentials = null;
         try {
           Gson gson = new Gson();
-          user = gson.fromJson(requestData.body, User.class);
-        } catch (Exception error) {
+          credentials = gson.fromJson(requestData.body, Credentials.class);
+        } catch (JsonSyntaxException error) {
           responseData.statusCode = 400;
           return responseData;
         }
-        if (user.name == null || user.pw == null) {
+        if (Utilities.nullOrEmpty(credentials.name)
+        || Utilities.nullOrEmpty(credentials.pw)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        String queryString = "SELECT id, pw, salt FROM users WHERE name = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, user.name);
-        results = statement.executeQuery();
-        if (!results.next()) {
+        User user = PersistentModel.shared.getUserByName(credentials.name);
+        if (user == null) {
           responseData.statusCode = 403;
           return responseData;
         }
-        String pwExpected = results.getString(2);
-        String salt = results.getString(3);
-        if (!Utilities.generateHash(user.pw, salt).equals(pwExpected)) {
+        if (!Utilities.generateHash(credentials.pw, user.salt)
+        .equals(user.pw)) {
           responseData.statusCode = 403;
           return responseData;
         }
         String sessionId = Utilities.generateRandomString(32);
-        int userId = results.getInt(1);
-        DbHelper.close(statement, results);
-        queryString = "SELECT * FROM sessions WHERE id = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, sessionId);
-        results = statement.executeQuery();
-        while (results.next()) {
-          DbHelper.close(null, results);
+        Session session = PersistentModel.shared.getSessionById(sessionId);
+        while (session != null) {
           sessionId = Utilities.generateRandomString(32);
-          statement.setString(1, sessionId);
-          results = statement.executeQuery();
+          session = PersistentModel.shared.getSessionById(sessionId);
         }
         long expiration = System.currentTimeMillis() + 86400000;
-        DbHelper.close(statement, results);
-        queryString
-        = "INSERT INTO sessions (id, user, expiration) VALUES (?, ?, ?);";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, sessionId);
-        statement.setInt(2, userId);
-        statement.setLong(3, expiration);
-        int affectedCount = statement.executeUpdate();
-        if (affectedCount != 1) {
+        session = new Session();
+        session.id = sessionId;
+        session.user = user.id;
+        session.expiration = expiration;
+        if (!PersistentModel.shared.createSession(session)) {
           responseData.statusCode = 500;
           return responseData;
         }
@@ -90,12 +73,12 @@ public class APILoginServlet extends HttpServlet {
         responseData.cookies.put("session",
         new AbstractMap.SimpleEntry<String, Long>(sessionId, expiration));
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, results);
       }
     }
   }
@@ -103,14 +86,9 @@ public class APILoginServlet extends HttpServlet {
   private class DeleteRequestHandlerCallback
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
-      PreparedStatement statement = null;
       try {
         ResponseData responseData = new ResponseData();
-        String queryString = "DELETE FROM sessions WHERE id = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, requestData.sessionId);
-        int affectedCount = statement.executeUpdate();
-        if (affectedCount != 1) {
+        if (!PersistentModel.shared.deleteSessionById(requestData.sessionId)) {
           responseData.statusCode = 500;
           return responseData;
         }
@@ -119,12 +97,12 @@ public class APILoginServlet extends HttpServlet {
         responseData.cookies.put("session",
         new AbstractMap.SimpleEntry<String, Long>(null, (long) 0));
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, null);
       }
     }
   }

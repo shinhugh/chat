@@ -1,10 +1,9 @@
 package chat;
 
-import java.io.*;
+import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import java.sql.*;
-import com.google.gson.*;
+import java.io.*;
 
 public class APIUserServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -34,29 +33,23 @@ public class APIUserServlet extends HttpServlet {
   private class GetRequestHandlerCallback
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
-      PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
-        String queryString = "SELECT name FROM users WHERE id = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setInt(1, requestData.userId);
-        results = statement.executeQuery();
-        results.next();
-        User user = new User();
-        user.name = results.getString(1);
+        User user = PersistentModel.shared.getUserById(requestData.userId);
+        UserName userName = new UserName();
+        userName.name = user.name;
         Gson gson = new Gson();
-        String userJson = gson.toJson(user);
+        String userNameJson = gson.toJson(userName);
         responseData.statusCode = 200;
         responseData.contentType = "application/json";
-        responseData.body = userJson;
+        responseData.body = userNameJson;
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, results);
       }
     }
   }
@@ -64,54 +57,48 @@ public class APIUserServlet extends HttpServlet {
   private class PostRequestHandlerCallback
   implements RequestHandlerCallback {
     public ResponseData call(RequestData requestData) {
-      PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
-        if (requestData.body == null) {
+        if (Utilities.nullOrEmpty(requestData.body)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = null;
+        Credentials credentials = null;
         try {
           Gson gson = new Gson();
-          user = gson.fromJson(requestData.body, User.class);
-        } catch (Exception error) {
+          credentials = gson.fromJson(requestData.body, Credentials.class);
+        } catch (JsonSyntaxException error) {
           responseData.statusCode = 400;
           return responseData;
         }
-        if (user.name == null || user.pw == null) {
+        if (Utilities.nullOrEmpty(credentials.name)
+        || Utilities.nullOrEmpty(credentials.pw)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        String queryString = "SELECT * FROM users WHERE name = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, user.name);
-        results = statement.executeQuery();
-        if (results.next()) {
+        User user = PersistentModel.shared.getUserByName(credentials.name);
+        if (user != null) {
           responseData.statusCode = 400;
           return responseData;
         }
         String salt = Utilities.generateRandomString((short) 16);
-        String pwSaltHash = Utilities.generateHash(user.pw, salt);
-        queryString = "INSERT INTO users (name, pw, salt) VALUES (?, ?, ?);";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setString(1, user.name);
-        statement.setString(2, pwSaltHash);
-        statement.setString(3, salt);
-        int affectedCount = statement.executeUpdate();
-        if (affectedCount != 1) {
+        String pwSaltHash = Utilities.generateHash(credentials.pw, salt);
+        user = new User();
+        user.name = credentials.name;
+        user.pw = pwSaltHash;
+        user.salt = salt;
+        if (!PersistentModel.shared.createUser(user)) {
           responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, results);
       }
     }
   }
@@ -119,75 +106,48 @@ public class APIUserServlet extends HttpServlet {
   private class PutRequestHandlerCallback
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
-      PreparedStatement statement = null;
-      ResultSet results = null;
       try {
         ResponseData responseData = new ResponseData();
-        if (requestData.body == null) {
+        if (Utilities.nullOrEmpty(requestData.body)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = null;
+        Credentials credentials = null;
         try {
           Gson gson = new Gson();
-          user = gson.fromJson(requestData.body, User.class);
-        } catch (Exception error) {
+          credentials = gson.fromJson(requestData.body, Credentials.class);
+        } catch (JsonSyntaxException error) {
           responseData.statusCode = 400;
           return responseData;
         }
-        if (user.name == null && user.pw == null) {
+        if (Utilities.nullOrEmpty(credentials.name)
+        && Utilities.nullOrEmpty(credentials.pw)) {
           responseData.statusCode = 400;
           return responseData;
         }
-        int affectedCount = 0;
-        if (user.pw == null) {
-          String queryString = "UPDATE users SET name = ? WHERE id = ?;";
-          statement = requestData.connection.prepareStatement(queryString);
-          statement.setString(1, user.name);
-          statement.setInt(2, requestData.userId);
-          affectedCount = statement.executeUpdate();
-        } else if (user.name == null) {
-          String queryString = "SELECT salt FROM users WHERE id = ?;";
-          statement = requestData.connection.prepareStatement(queryString);
-          statement.setInt(1, requestData.userId);
-          results = statement.executeQuery();
-          results.next();
-          String salt = results.getString(1);
-          DbHelper.close(statement, results);
-          String pwSaltHash = Utilities.generateHash(user.pw, salt);
-          queryString = "UPDATE users SET pw = ? WHERE id = ?;";
-          statement = requestData.connection.prepareStatement(queryString);
-          statement.setString(1, pwSaltHash);
-          statement.setInt(2, requestData.userId);
-          affectedCount = statement.executeUpdate();
+        User user = PersistentModel.shared.getUserById(requestData.userId);
+        if (Utilities.nullOrEmpty(credentials.pw)) {
+          user.name = credentials.name;
+        } else if (Utilities.nullOrEmpty(credentials.name)) {
+          String pwSaltHash = Utilities.generateHash(credentials.pw, user.salt);
+          user.pw = pwSaltHash;
         } else {
-          String queryString = "SELECT salt FROM users WHERE id = ?;";
-          statement = requestData.connection.prepareStatement(queryString);
-          statement.setInt(1, requestData.userId);
-          results = statement.executeQuery();
-          results.next();
-          String salt = results.getString(1);
-          DbHelper.close(statement, results);
-          String pwSaltHash = Utilities.generateHash(user.pw, salt);
-          queryString = "UPDATE users SET name = ?, pw = ? WHERE id = ?;";
-          statement = requestData.connection.prepareStatement(queryString);
-          statement.setString(1, user.name);
-          statement.setString(2, pwSaltHash);
-          statement.setInt(3, requestData.userId);
-          affectedCount = statement.executeUpdate();
+          String pwSaltHash = Utilities.generateHash(credentials.pw, user.salt);
+          user.name = credentials.name;
+          user.pw = pwSaltHash;
         }
-        if (affectedCount != 1) {
+        if (!PersistentModel.shared.updateUser(user)) {
           responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, results);
       }
     }
   }
@@ -195,26 +155,25 @@ public class APIUserServlet extends HttpServlet {
   private class DeleteRequestHandlerCallback
   implements RequestWithSessionHandlerCallback {
     public ResponseData call(RequestWithSessionData requestData) {
-      PreparedStatement statement = null;
       try {
         ResponseData responseData = new ResponseData();
-        String queryString = "DELETE FROM users WHERE id = ?;";
-        statement = requestData.connection.prepareStatement(queryString);
-        statement.setInt(1, requestData.userId);
-        int affectedCount = statement.executeUpdate();
-        if (affectedCount != 1) {
+        if (!PersistentModel.shared.deleteUserById(requestData.userId)) {
           responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
         return responseData;
-      } catch (Exception error) {
+      }
+
+      catch (Exception error) {
         ResponseData responseData = new ResponseData();
         responseData.statusCode = 500;
         return responseData;
-      } finally {
-        DbHelper.close(statement, null);
       }
     }
+  }
+
+  private class UserName {
+    public String name;
   }
 }

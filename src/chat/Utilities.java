@@ -1,10 +1,14 @@
 package chat;
 
-import java.util.*;
 import java.nio.charset.*;
 import java.security.*;
+import java.util.*;
 
 class Utilities {
+  public static boolean nullOrEmpty(String str) {
+    return str == null || str == "";
+  }
+
   public static String generateRandomString(int length) {
     if (length < 1) {
       return "";
