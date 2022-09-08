@@ -53,6 +53,12 @@ public class State {
   }
 
   /*
+   * All the following methods will:
+   * - Throw an exception on a call with illegal arguments (e.g. null, < 1)
+   * - Throw an exception on unexpected errors (e.g. database not responding)
+   * - Return instance (found) / null (not found) for read methods
+   * - Return true (success) / false (failure) for write methods
+   *
    * User getUserById(int userId) +
    * User getUserByName(String userName) +
    * boolean createUser(User user) +
@@ -185,7 +191,14 @@ public class State {
       statement.setString(1, user.name);
       statement.setString(2, user.hash);
       statement.setString(3, user.salt);
-      return statement.executeUpdate() == 1;
+      try {
+        return statement.executeUpdate() == 1;
+      } catch (SQLException error) {
+        if (error.getErrorCode() == dbErrorCodeDuplicateKey) {
+          return false;
+        }
+        throw error;
+      }
     }
 
     catch (SQLException error) {
@@ -217,8 +230,15 @@ public class State {
         statement = connection.prepareStatement(queryString);
         statement.setString(1, user.name);
         statement.setInt(2, user.id);
-        if (statement.executeUpdate() != 1) {
-          return false;
+        try {
+          if (statement.executeUpdate() != 1) {
+            return false;
+          }
+        } catch (SQLException error) {
+          if (error.getErrorCode() == dbErrorCodeDuplicateKey) {
+            return false;
+          }
+          throw error;
         }
       }
 
