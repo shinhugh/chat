@@ -1,8 +1,10 @@
 package chat.app;
 
+import chat.*;
 import chat.app.structs.*;
 import chat.state.*;
 import chat.state.structs.*;
+import java.util.*;
 
 public class App {
   public static App shared = new App(State.shared);
@@ -177,7 +179,8 @@ public class App {
     this.state = state;
   }
 
-  private chat.state.structs.User getUserBySessionToken(String sessionToken) {
+  private chat.state.structs.User getUserBySessionToken(String sessionToken)
+  throws Exception {
     if (Utilities.nullOrEmpty(sessionToken)) {
       throw new IllegalArgumentException("Illegal argument");
     }

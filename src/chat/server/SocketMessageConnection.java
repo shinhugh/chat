@@ -1,7 +1,9 @@
 package chat.server;
 
+import chat.*;
 import chat.app.*;
 import chat.app.structs.*;
+import chat.server.structs.*;
 import com.google.gson.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;

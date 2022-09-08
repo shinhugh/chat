@@ -1,7 +1,9 @@
 package chat.server;
 
+import chat.*;
 import chat.app.*;
 import chat.app.structs.*;
+import chat.server.structs.*;
 import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -71,7 +73,7 @@ public class APILoginServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        if (!App.shared.logOut(requestData.sessionId)) {
+        if (!App.shared.logOut(requestData.sessionToken)) {
           responseData.statusCode = 400;
           return responseData;
         }

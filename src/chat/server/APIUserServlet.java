@@ -1,7 +1,9 @@
 package chat.server;
 
+import chat.*;
 import chat.app.*;
 import chat.app.structs.*;
+import chat.server.structs.*;
 import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -37,7 +39,7 @@ public class APIUserServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        User user = App.shared.getUser(requestData.sessionId);
+        User user = App.shared.getUser(requestData.sessionToken);
         if (user == null) {
           responseData.statusCode = 400;
           return responseData;
@@ -118,7 +120,7 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        if (!App.shared.updateUser(requestData.sessionId, credentials)) {
+        if (!App.shared.updateUser(requestData.sessionToken, credentials)) {
           responseData.statusCode = 400;
           return responseData;
         }
@@ -139,7 +141,7 @@ public class APIUserServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        if (!App.shared.deleteUser(requestData.sessionId)) {
+        if (!App.shared.deleteUser(requestData.sessionToken)) {
           responseData.statusCode = 400;
           return responseData;
         }

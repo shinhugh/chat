@@ -1,6 +1,8 @@
 package chat.server;
 
+import chat.*;
 import chat.app.*;
+import chat.server.structs.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
