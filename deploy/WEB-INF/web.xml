@@ -17,22 +17,22 @@
 
     <servlet>
       <servlet-name>apiUser</servlet-name>
-      <servlet-class>chat.APIUserServlet</servlet-class>
+      <servlet-class>chat.server.APIUserServlet</servlet-class>
     </servlet>
 
     <servlet>
       <servlet-name>apiLogin</servlet-name>
-      <servlet-class>chat.APILoginServlet</servlet-class>
+      <servlet-class>chat.server.APILoginServlet</servlet-class>
     </servlet>
 
     <servlet>
       <servlet-name>pageRoot</servlet-name>
-      <servlet-class>chat.PageRootServlet</servlet-class>
+      <servlet-class>chat.server.PageRootServlet</servlet-class>
     </servlet>
 
     <servlet>
       <servlet-name>pageLogin</servlet-name>
-      <servlet-class>chat.PageLoginServlet</servlet-class>
+      <servlet-class>chat.server.PageLoginServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
