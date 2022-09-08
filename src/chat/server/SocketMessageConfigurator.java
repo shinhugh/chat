@@ -1,5 +1,6 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
 import java.util.*;
@@ -13,28 +14,21 @@ extends ServerEndpointConfig.Configurator {
 
     try {
       List<String> cookies = request.getHeaders().get("cookie");
-      String sessionId = null;
+      String sessionToken = null;
       for (String cookie : cookies) {
         if (cookie.startsWith("session") && cookie.length() > 8) {
-          sessionId = cookie.substring(8);
+          sessionToken = cookie.substring(8);
         }
       }
-      if (Utilities.nullOrEmpty(sessionId)) {
+      if (Utilities.nullOrEmpty(sessionToken)) {
         dropConnection(response);
         return;
       }
-      chat.Session session = PersistentModel.shared.getSessionById(sessionId);
-      if (session == null) {
+      if (!App.shared.verifySessionToken(sessionToken)) {
         dropConnection(response);
         return;
       }
-      User user = PersistentModel.shared.getUserById(session.user);
-      if (user == null) {
-        dropConnection(response);
-        return;
-      }
-      config.getUserProperties().put("userId", user.id);
-      config.getUserProperties().put("sessionId", session.id);
+      config.getUserProperties().put("sessionToken", sessionToken);
     }
 
     catch (Exception error) {

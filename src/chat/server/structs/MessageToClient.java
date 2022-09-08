@@ -1,6 +1,6 @@
-package chat;
+package chat.server.structs;
 
-class MessageToClient {
+public class MessageToClient {
   public boolean outgoing;
   public String userName;
   public String timestamp;

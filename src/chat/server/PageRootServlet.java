@@ -1,5 +1,6 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
@@ -10,7 +11,7 @@ public class PageRootServlet extends HttpServlet {
   throws IOException, ServletException
   {
     try {
-      String sessionId = null;
+      String sessionToken = null;
       Cookie[] cookies = request.getCookies();
       if (cookies == null) {
         response.setStatus(HttpServletResponse.SC_FOUND);
@@ -19,17 +20,16 @@ public class PageRootServlet extends HttpServlet {
       }
       for (Cookie cookie : cookies) {
         if (cookie.getName().equals("session")) {
-          sessionId = cookie.getValue();
+          sessionToken = cookie.getValue();
           break;
         }
       }
-      if (Utilities.nullOrEmpty(sessionId)) {
+      if (Utilities.nullOrEmpty(sessionToken)) {
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", "/login");
         return;
       }
-      User user = PersistentModel.shared.getUserBySessionId(sessionId);
-      if (user == null) {
+      if (!App.shared.verifySessionToken(sessionToken)) {
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", "/login");
         return;

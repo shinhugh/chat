@@ -1,5 +1,6 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
@@ -10,19 +11,18 @@ public class PageLoginServlet extends HttpServlet {
   throws IOException, ServletException
   {
     try {
-      String sessionId = null;
+      String sessionToken = null;
       Cookie[] cookies = request.getCookies();
       if (cookies != null) {
         for (Cookie cookie : cookies) {
           if (cookie.getName().equals("session")) {
-            sessionId = cookie.getValue();
+            sessionToken = cookie.getValue();
             break;
           }
         }
       }
-      if (sessionId != null) {
-        User user = PersistentModel.shared.getUserBySessionId(sessionId);
-        if (user != null) {
+      if (sessionToken != null) {
+        if (App.shared.verifySessionToken(sessionToken)) {
           response.setStatus(HttpServletResponse.SC_FOUND);
           response.setHeader("Location", "/");
           return;

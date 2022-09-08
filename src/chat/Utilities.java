@@ -4,9 +4,12 @@ import java.nio.charset.*;
 import java.security.*;
 import java.util.*;
 
-class Utilities {
+public class Utilities {
+  private static final byte[] hexPool = "0123456789abcdef"
+  .getBytes(StandardCharsets.US_ASCII);
+
   public static boolean nullOrEmpty(String str) {
-    return str == null || str == "";
+    return str == null || "".equals(str);
   }
 
   public static String generateRandomString(int length) {
@@ -45,29 +48,5 @@ class Utilities {
     return new String(builder, StandardCharsets.UTF_8);
   }
 
-  public static String binaryString(byte input) {
-    int inputInt = Byte.toUnsignedInt(input);
-    StringBuilder builder = new StringBuilder();
-    int mask = 0x00000080;
-    for (int i = 0; i < 8; i++) {
-      builder.append((inputInt & mask) == 0 ? "0" : "1");
-      mask = mask >>> 1;
-    }
-    return builder.toString();
-  }
-
-  public static String binaryString(int input) {
-    StringBuilder builder = new StringBuilder();
-    int mask = 0x80000000;
-    for (int i = 0; i < 32; i++) {
-      builder.append((input & mask) == 0 ? "0" : "1");
-      mask = mask >>> 1;
-    }
-    return builder.toString();
-  }
-
   private Utilities() { }
-
-  private static final byte[] hexPool
-  = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
 }

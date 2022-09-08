@@ -1,5 +1,6 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
@@ -66,7 +67,7 @@ class RequestHandler {
   HttpServletResponse response, RequestWithSessionHandlerCallback callback)
   throws IOException, ServletException {
     try {
-      String sessionId = null;
+      String sessionToken = null;
       Cookie[] cookies = request.getCookies();
       if (cookies == null) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -74,23 +75,21 @@ class RequestHandler {
       }
       for (Cookie cookie : cookies) {
         if (cookie.getName().equals("session")) {
-          sessionId = cookie.getValue();
+          sessionToken = cookie.getValue();
           break;
         }
       }
-      if (Utilities.nullOrEmpty(sessionId)) {
+      if (Utilities.nullOrEmpty(sessionToken)) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
-      User user = PersistentModel.shared.getUserBySessionId(sessionId);
-      if (user == null) {
+      if (!App.shared.verifySessionToken(sessionToken)) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
 
       RequestWithSessionData requestData = new RequestWithSessionData();
-      requestData.sessionId = sessionId;
-      requestData.userId = user.id;
+      requestData.sessionToken = sessionToken;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
       .collect(Collectors.joining(System.lineSeparator()));

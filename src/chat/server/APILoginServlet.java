@@ -1,5 +1,7 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
+import chat.app.structs.*;
 import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -43,35 +45,16 @@ public class APILoginServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = PersistentModel.shared.getUserByName(credentials.name);
-        if (user == null) {
+        Session session = App.shared.logIn(credentials);
+        if (session == null) {
           responseData.statusCode = 403;
-          return responseData;
-        }
-        if (!Utilities.generateHash(credentials.pw, user.salt)
-        .equals(user.pw)) {
-          responseData.statusCode = 403;
-          return responseData;
-        }
-        String sessionId = Utilities.generateRandomString(32);
-        Session session = PersistentModel.shared.getSessionById(sessionId);
-        while (session != null) {
-          sessionId = Utilities.generateRandomString(32);
-          session = PersistentModel.shared.getSessionById(sessionId);
-        }
-        long expiration = System.currentTimeMillis() + 86400000;
-        session = new Session();
-        session.id = sessionId;
-        session.user = user.id;
-        session.expiration = expiration;
-        if (!PersistentModel.shared.createSession(session)) {
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
         responseData.cookies = new HashMap<String, Map.Entry<String, Long>>();
         responseData.cookies.put("session",
-        new AbstractMap.SimpleEntry<String, Long>(sessionId, expiration));
+        new AbstractMap.SimpleEntry<String, Long>(session.token,
+        session.expiration));
         return responseData;
       }
 
@@ -88,8 +71,8 @@ public class APILoginServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        if (!PersistentModel.shared.deleteSessionById(requestData.sessionId)) {
-          responseData.statusCode = 500;
+        if (!App.shared.logOut(requestData.sessionId)) {
+          responseData.statusCode = 400;
           return responseData;
         }
         responseData.statusCode = 200;

@@ -1,8 +1,8 @@
-package chat;
+package chat.server.structs;
 
 import java.util.*;
 
-class ResponseData {
+public class ResponseData {
   public int statusCode;
   public Map<String, Map.Entry<String, Long>> cookies;
   public String contentType;

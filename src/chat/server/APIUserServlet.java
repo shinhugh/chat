@@ -1,5 +1,7 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
+import chat.app.structs.*;
 import com.google.gson.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -35,14 +37,16 @@ public class APIUserServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        User user = PersistentModel.shared.getUserById(requestData.userId);
-        UserName userName = new UserName();
-        userName.name = user.name;
+        User user = App.shared.getUser(requestData.sessionId);
+        if (user == null) {
+          responseData.statusCode = 400;
+          return responseData;
+        }
         Gson gson = new Gson();
-        String userNameJson = gson.toJson(userName);
+        String userJson = gson.toJson(user);
         responseData.statusCode = 200;
         responseData.contentType = "application/json";
-        responseData.body = userNameJson;
+        responseData.body = userJson;
         return responseData;
       }
 
@@ -76,19 +80,8 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = PersistentModel.shared.getUserByName(credentials.name);
-        if (user != null) {
+        if (!App.shared.createUser(credentials)) {
           responseData.statusCode = 400;
-          return responseData;
-        }
-        String salt = Utilities.generateRandomString((short) 16);
-        String pwSaltHash = Utilities.generateHash(credentials.pw, salt);
-        user = new User();
-        user.name = credentials.name;
-        user.pw = pwSaltHash;
-        user.salt = salt;
-        if (!PersistentModel.shared.createUser(user)) {
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -125,19 +118,8 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        User user = PersistentModel.shared.getUserById(requestData.userId);
-        if (Utilities.nullOrEmpty(credentials.pw)) {
-          user.name = credentials.name;
-        } else if (Utilities.nullOrEmpty(credentials.name)) {
-          String pwSaltHash = Utilities.generateHash(credentials.pw, user.salt);
-          user.pw = pwSaltHash;
-        } else {
-          String pwSaltHash = Utilities.generateHash(credentials.pw, user.salt);
-          user.name = credentials.name;
-          user.pw = pwSaltHash;
-        }
-        if (!PersistentModel.shared.updateUser(user)) {
-          responseData.statusCode = 500;
+        if (!App.shared.updateUser(requestData.sessionId, credentials)) {
+          responseData.statusCode = 400;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -157,8 +139,8 @@ public class APIUserServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        if (!PersistentModel.shared.deleteUserById(requestData.userId)) {
-          responseData.statusCode = 500;
+        if (!App.shared.deleteUser(requestData.sessionId)) {
+          responseData.statusCode = 400;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -171,9 +153,5 @@ public class APIUserServlet extends HttpServlet {
         return responseData;
       }
     }
-  }
-
-  private class UserName {
-    public String name;
   }
 }

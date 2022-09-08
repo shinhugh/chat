@@ -1,5 +1,7 @@
-package chat;
+package chat.server;
 
+import chat.app.*;
+import chat.app.structs.*;
 import com.google.gson.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
@@ -15,51 +17,35 @@ public class SocketMessageConnection {
   = new CopyOnWriteArraySet<>();
 
   private jakarta.websocket.Session wsSession;
-  private chat.Session session;
-  private User user;
+  private String sessionToken;
+  private String userName;
 
   @OnOpen
   public void onOpen(jakarta.websocket.Session wsSession) {
     try {
       this.wsSession = wsSession;
       connections.add(this);
-      String sessionId = (String) this.wsSession.getUserProperties()
-      .get("sessionId");
-      session = PersistentModel.shared.getSessionById(sessionId);
-      int userId = (int) this.wsSession.getUserProperties().get("userId");
-      user = PersistentModel.shared.getUserById(userId);
+      sessionToken = (String) this.wsSession.getUserProperties()
+      .get("sessionToken");
+      userName = App.shared.getUser(sessionToken).name;
 
-      HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
-      Message[] messages = PersistentModel.shared.getMessages();
+      Message[] messages = App.shared.getMessages(sessionToken);
       for (Message message : messages) {
         Gson gson = new Gson();
-        String timestamp = Instant.ofEpochMilli(message.timestamp).toString();
-        String outgoingMessageJson = null;
-        if (message.user == user.id) {
-          MessageToClient outgoingMessageOut = new MessageToClient();
-          outgoingMessageOut.outgoing = true;
-          outgoingMessageOut.timestamp = timestamp;
-          outgoingMessageOut.content = message.content;
-          outgoingMessageJson = gson.toJson(outgoingMessageOut);
-        } else {
-          MessageToClient outgoingMessageIn = new MessageToClient();
-          if (userNameCache.containsKey(message.user)) {
-            outgoingMessageIn.userName = userNameCache.get(message.user);
-          } else {
-            User messageUser = PersistentModel.shared.getUserById(message.user);
-            userNameCache.put(message.user, messageUser.name);
-            outgoingMessageIn.userName = messageUser.name;
-          }
-          outgoingMessageIn.timestamp = timestamp;
-          outgoingMessageIn.content = message.content;
-          outgoingMessageJson = gson.toJson(outgoingMessageIn);
-        }
+        MessageToClient messageToClient = new MessageToClient();
+        messageToClient.outgoing = message.outgoing;
+        messageToClient.userName = message.userName;
+        messageToClient.timestamp = Instant.ofEpochMilli(message.timestamp)
+        .toString();
+        messageToClient.content = message.content;
+        String outgoingMessageJson = gson.toJson(messageToClient);
         try {
           synchronized (this) {
             this.wsSession.getBasicRemote().sendText(outgoingMessageJson);
           }
         } catch (IOException error) {
           close();
+          return;
         }
       }
     }
@@ -77,8 +63,7 @@ public class SocketMessageConnection {
   @OnMessage
   public void onMessage(String incomingMessageJson) {
     try {
-      session = PersistentModel.shared.getSessionById(session.id);
-      if (session == null) {
+      if (!App.shared.verifySessionToken(sessionToken)) {
         close();
         return;
       }
@@ -101,15 +86,14 @@ public class SocketMessageConnection {
       String timestamp = currInstant.toString();
 
       Message message = new Message();
-      message.user = user.id;
       message.timestamp = currMilli;
       message.content = incomingMessage.content;
-      if(!PersistentModel.shared.createMessage(message)) {
+      if(!App.shared.createMessage(sessionToken, message)) {
         return;
       }
 
       MessageToClient outgoingMessageIn = new MessageToClient();
-      outgoingMessageIn.userName = user.name;
+      outgoingMessageIn.userName = userName;
       outgoingMessageIn.timestamp = timestamp;
       outgoingMessageIn.content = incomingMessage.content;
       String outgoingMessageInJson = gson.toJson(outgoingMessageIn);
@@ -121,7 +105,7 @@ public class SocketMessageConnection {
 
       for (SocketMessageConnection connection : connections) {
         String outgoingMessageJson = null;
-        if (connection.user.id == user.id) {
+        if (connection.userName.equals(userName)) {
           outgoingMessageJson = outgoingMessageOutJson;
         } else {
           outgoingMessageJson = outgoingMessageInJson;
