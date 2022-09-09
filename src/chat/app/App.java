@@ -11,6 +11,12 @@ public class App {
 
   private State state;
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<chat.app.structs.Session> logIn(Credentials credentials) {
     try {
       Result<chat.app.structs.Session> result
@@ -64,6 +70,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<Object> logOut(String sessionToken) {
     try {
       Result<Object> result = new Result<Object>();
@@ -92,6 +104,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<Object> verifySessionToken(String sessionToken) {
     try {
       Result<Object> result = new Result<Object>();
@@ -115,6 +133,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<chat.app.structs.User> getUser(String sessionToken) {
     try {
       Result<chat.app.structs.User> result
@@ -146,6 +170,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Conflict
+   */
   public Result<Object> createUser(Credentials credentials) {
     try {
       Result<Object> result = new Result<Object>();
@@ -155,6 +185,8 @@ public class App {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
+
+      // TODO: Check credentials for illegal characters
 
       if (state.getUserByName(credentials.name) != null) {
         result.failureReason = Result.FailureReason.Conflict;
@@ -179,6 +211,13 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   * - Conflict
+   */
   public Result<Object> updateUser(String sessionToken,
   Credentials credentials) {
     try {
@@ -225,6 +264,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<Object> deleteUser(String sessionToken) {
     try {
       Result<Object> result = new Result<Object>();
@@ -255,6 +300,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<chat.app.structs.Message[]> getMessages(String sessionToken) {
     try {
       Result<chat.app.structs.Message[]> result
@@ -306,6 +357,12 @@ public class App {
     }
   }
 
+  /*
+   * Possible FailureReason values:
+   * - Unknown
+   * - IllegalArgument
+   * - Unauthorized
+   */
   public Result<Object> createMessage(String sessionToken,
   chat.app.structs.Message message) {
     try {

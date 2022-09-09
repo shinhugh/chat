@@ -32,13 +32,16 @@ public class PageRootServlet extends HttpServlet {
       }
       App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
       if (!result.success) {
-        if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-          response.setStatus(HttpServletResponse.SC_FOUND);
-          response.setHeader("Location", "/login");
-          return;
+        switch(result.failureReason) {
+          case IllegalArgument:
+          case Unauthorized:
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            response.setHeader("Location", "/login");
+            return;
+          default:
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
         }
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        return;
       }
 
       response.setStatus(HttpServletResponse.SC_OK);

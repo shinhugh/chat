@@ -49,11 +49,17 @@ public class APILoginServlet extends HttpServlet {
         }
         App.Result<Session> result = App.shared.logIn(credentials);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-            responseData.statusCode = 403;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+              responseData.statusCode = 400;
+              break;
+            case Unauthorized:
+              responseData.statusCode = 403;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -79,11 +85,17 @@ public class APILoginServlet extends HttpServlet {
         ResponseData responseData = new ResponseData();
         App.Result<Object> result = App.shared.logOut(requestData.sessionToken);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-            responseData.statusCode = 403;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+              responseData.statusCode = 400;
+              break;
+            case Unauthorized:
+              responseData.statusCode = 403;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;

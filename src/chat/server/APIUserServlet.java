@@ -41,11 +41,17 @@ public class APIUserServlet extends HttpServlet {
         ResponseData responseData = new ResponseData();
         App.Result<User> result = App.shared.getUser(requestData.sessionToken);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-            responseData.statusCode = 403;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+              responseData.statusCode = 400;
+              break;
+            case Unauthorized:
+              responseData.statusCode = 403;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          responseData.statusCode = 500;
           return responseData;
         }
         Gson gson = new Gson();
@@ -88,11 +94,15 @@ public class APIUserServlet extends HttpServlet {
         }
         App.Result<Object> result = App.shared.createUser(credentials);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Conflict) {
-            responseData.statusCode = 400;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+            case Conflict:
+              responseData.statusCode = 400;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -129,18 +139,21 @@ public class APIUserServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        App.Result<Object> result = App.shared.updateUser(requestData.sessionToken,
-        credentials);
+        App.Result<Object> result = App.shared.updateUser(requestData
+        .sessionToken, credentials);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-            responseData.statusCode = 403;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+            case Conflict:
+              responseData.statusCode = 400;
+              break;
+            case Unauthorized:
+              responseData.statusCode = 403;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          if (result.failureReason == App.Result.FailureReason.Conflict) {
-            responseData.statusCode = 400;
-            return responseData;
-          }
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
@@ -160,13 +173,20 @@ public class APIUserServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        App.Result<Object> result = App.shared.deleteUser(requestData.sessionToken);
+        App.Result<Object> result = App.shared.deleteUser(requestData
+        .sessionToken);
         if (!result.success) {
-          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
-            responseData.statusCode = 403;
-            return responseData;
+          switch(result.failureReason) {
+            case IllegalArgument:
+              responseData.statusCode = 400;
+              break;
+            case Unauthorized:
+              responseData.statusCode = 403;
+              break;
+            default:
+              responseData.statusCode = 500;
+              break;
           }
-          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;

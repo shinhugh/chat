@@ -28,7 +28,7 @@ public class PageLoginServlet extends HttpServlet {
           response.setHeader("Location", "/");
           return;
         }
-        if (result.failureReason != App.Result.FailureReason.Unauthorized) {
+        if (result.failureReason == App.Result.FailureReason.Unknown) {
           response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
           return;
         }
