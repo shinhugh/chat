@@ -85,8 +85,13 @@ class RequestHandler {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
-      if (!App.shared.verifySessionToken(sessionToken)) {
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
+      if (!result.success) {
+        if (result.failureReason == App.Result.FailureReason.Unauthorized) {
+          response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+          return;
+        }
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         return;
       }
 

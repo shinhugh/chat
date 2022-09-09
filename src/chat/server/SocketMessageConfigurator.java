@@ -25,7 +25,8 @@ extends ServerEndpointConfig.Configurator {
         dropConnection(response);
         return;
       }
-      if (!App.shared.verifySessionToken(sessionToken)) {
+      App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
+      if (!result.success) {
         dropConnection(response);
         return;
       }

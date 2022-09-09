@@ -78,7 +78,7 @@ public class State {
   public User getUserById(int userId)
   throws Exception {
     if (userId < 1) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -117,7 +117,7 @@ public class State {
   public User getUserByName(String userName)
   throws Exception {
     if (Utilities.nullOrEmpty(userName)) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -157,7 +157,7 @@ public class State {
   throws Exception {
     if (user == null || Utilities.nullOrEmpty(user.name)
     || Utilities.nullOrEmpty(user.hash) || Utilities.nullOrEmpty(user.salt)) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -213,7 +213,7 @@ public class State {
   throws Exception {
     if (user == null || user.id < 1 || (Utilities.nullOrEmpty(user.name)
     && Utilities.nullOrEmpty(user.hash) && Utilities.nullOrEmpty(user.salt))) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -287,7 +287,7 @@ public class State {
   public boolean deleteUserById(int userId)
   throws Exception {
     if (userId < 1) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -314,7 +314,7 @@ public class State {
   public Session getSessionById(String sessionId)
   throws Exception {
     if (Utilities.nullOrEmpty(sessionId)) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -354,7 +354,7 @@ public class State {
   throws Exception {
     if (session == null || Utilities.nullOrEmpty(session.id)
     || session.userId < 1 || session.expiration < 0) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -391,7 +391,7 @@ public class State {
   public boolean deleteSessionById(String sessionId)
   throws Exception {
     if (Utilities.nullOrEmpty(sessionId)) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -418,7 +418,7 @@ public class State {
   public boolean deleteSessionsByUserId(int userId)
   throws Exception {
     if (userId < 1) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -446,7 +446,7 @@ public class State {
   public boolean deleteSessionsByExpirationCutoff(long sessionExpirationCutoff)
   throws Exception {
     if (sessionExpirationCutoff < 0) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {
@@ -514,7 +514,7 @@ public class State {
   throws Exception {
     if (message == null || message.userId < 1 || message.timestamp < 0
     || Utilities.nullOrEmpty(message.content)) {
-      throw new IllegalArgumentException("Illegal argument");
+      throw new IllegalArgumentException();
     }
 
     if (!assureConnection()) {

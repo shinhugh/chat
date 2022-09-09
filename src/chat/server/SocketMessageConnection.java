@@ -29,10 +29,19 @@ public class SocketMessageConnection {
       connections.add(this);
       sessionToken = (String) this.wsSession.getUserProperties()
       .get("sessionToken");
-      userName = App.shared.getUser(sessionToken).name;
+      App.Result<User> userResult = App.shared.getUser(sessionToken);
+      if (!userResult.success) {
+        close();
+        return;
+      }
+      userName = userResult.successValue.name;
 
-      Message[] messages = App.shared.getMessages(sessionToken);
-      for (Message message : messages) {
+      App.Result<Message[]> messagesResult = App.shared.getMessages(sessionToken);
+      if (!messagesResult.success) {
+        close();
+        return;
+      }
+      for (Message message : messagesResult.successValue) {
         Gson gson = new Gson();
         MessageToClient messageToClient = new MessageToClient();
         messageToClient.outgoing = message.outgoing;
@@ -65,7 +74,7 @@ public class SocketMessageConnection {
   @OnMessage
   public void onMessage(String incomingMessageJson) {
     try {
-      if (!App.shared.verifySessionToken(sessionToken)) {
+      if (!App.shared.verifySessionToken(sessionToken).success) {
         close();
         return;
       }
@@ -90,7 +99,7 @@ public class SocketMessageConnection {
       Message message = new Message();
       message.timestamp = currMilli;
       message.content = incomingMessage.content;
-      if(!App.shared.createMessage(sessionToken, message)) {
+      if(!App.shared.createMessage(sessionToken, message).success) {
         return;
       }
 

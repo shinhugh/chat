@@ -22,9 +22,14 @@ public class PageLoginServlet extends HttpServlet {
         }
       }
       if (sessionToken != null) {
-        if (App.shared.verifySessionToken(sessionToken)) {
+        App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
+        if (result.success) {
           response.setStatus(HttpServletResponse.SC_FOUND);
           response.setHeader("Location", "/");
+          return;
+        }
+        if (result.failureReason != App.Result.FailureReason.Unauthorized) {
+          response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
           return;
         }
       }

@@ -47,16 +47,20 @@ public class APILoginServlet extends HttpServlet {
           responseData.statusCode = 400;
           return responseData;
         }
-        Session session = App.shared.logIn(credentials);
-        if (session == null) {
-          responseData.statusCode = 403;
+        App.Result<Session> result = App.shared.logIn(credentials);
+        if (!result.success) {
+          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
+            responseData.statusCode = 403;
+            return responseData;
+          }
+          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;
         responseData.cookies = new HashMap<String, Map.Entry<String, Long>>();
         responseData.cookies.put("session",
-        new AbstractMap.SimpleEntry<String, Long>(session.token,
-        session.expiration));
+        new AbstractMap.SimpleEntry<String, Long>(result.successValue.token,
+        result.successValue.expiration));
         return responseData;
       }
 
@@ -73,8 +77,13 @@ public class APILoginServlet extends HttpServlet {
     public ResponseData call(RequestWithSessionData requestData) {
       try {
         ResponseData responseData = new ResponseData();
-        if (!App.shared.logOut(requestData.sessionToken)) {
-          responseData.statusCode = 400;
+        App.Result<Object> result = App.shared.logOut(requestData.sessionToken);
+        if (!result.success) {
+          if (result.failureReason == App.Result.FailureReason.Unauthorized) {
+            responseData.statusCode = 403;
+            return responseData;
+          }
+          responseData.statusCode = 500;
           return responseData;
         }
         responseData.statusCode = 200;

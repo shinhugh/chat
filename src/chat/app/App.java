@@ -11,168 +11,335 @@ public class App {
 
   private State state;
 
-  public chat.app.structs.Session logIn(Credentials credentials)
-  throws Exception {
-    if (credentials == null || Utilities.nullOrEmpty(credentials.name)
-    || Utilities.nullOrEmpty(credentials.pw)) {
-      throw new IllegalArgumentException("Illegal argument");
-    }
+  public Result<chat.app.structs.Session> logIn(Credentials credentials) {
+    try {
+      Result<chat.app.structs.Session> result
+      = new Result<chat.app.structs.Session>();
 
-    chat.state.structs.User user = state.getUserByName(credentials.name);
-    if (user == null) {
-      return null;
-    }
+      if (credentials == null || Utilities.nullOrEmpty(credentials.name)
+      || Utilities.nullOrEmpty(credentials.pw)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
 
-    String hash = Utilities.generateHash(credentials.pw, user.salt);
-    if (!hash.equals(user.hash)) {
-      return null;
-    }
+      chat.state.structs.User user = state.getUserByName(credentials.name);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
 
-    chat.state.structs.Session session = new chat.state.structs.Session();
-    session.id = Utilities.generateRandomString(32);
-    chat.state.structs.Session duplicateSession = state
-    .getSessionById(session.id);
-    while (duplicateSession != null) {
+      String hash = Utilities.generateHash(credentials.pw, user.salt);
+      if (!hash.equals(user.hash)) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      chat.state.structs.Session session = new chat.state.structs.Session();
       session.id = Utilities.generateRandomString(32);
-      duplicateSession = state.getSessionById(session.id);
+      chat.state.structs.Session duplicateSession = state
+      .getSessionById(session.id);
+      while (duplicateSession != null) {
+        session.id = Utilities.generateRandomString(32);
+        duplicateSession = state.getSessionById(session.id);
+      }
+      session.userId = user.id;
+      session.expiration = System.currentTimeMillis() + 86400000;
+      if (state.createSession(session)) {
+        chat.app.structs.Session appSession = new chat.app.structs.Session();
+        appSession.token = session.id;
+        appSession.expiration = session.expiration;
+        result.success = true;
+        result.successValue = appSession;
+        return result;
+      }
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
     }
-    session.userId = user.id;
-    session.expiration = System.currentTimeMillis() + 86400000;
-    if (state.createSession(session)) {
-      chat.app.structs.Session appSession = new chat.app.structs.Session();
-      appSession.token = session.id;
-      appSession.expiration = session.expiration;
-      return appSession;
+
+    catch (Exception error) {
+      Result<chat.app.structs.Session> result
+      = new Result<chat.app.structs.Session>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
     }
-    return null;
   }
 
-  public boolean logOut(String sessionToken)
-  throws Exception {
-    if (Utilities.nullOrEmpty(sessionToken)) {
-      throw new IllegalArgumentException("Illegal argument");
+  public Result<Object> logOut(String sessionToken) {
+    try {
+      Result<Object> result = new Result<Object>();
+
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      if (getUserBySessionToken(sessionToken) == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      result.success = state.deleteSessionById(sessionToken);
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unknown;
+      }
+      return result;
     }
 
-    return state.deleteSessionById(sessionToken);
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
   }
 
-  public boolean verifySessionToken(String sessionToken)
-  throws Exception {
-    return getUserBySessionToken(sessionToken) != null;
+  public Result<Object> verifySessionToken(String sessionToken) {
+    try {
+      Result<Object> result = new Result<Object>();
+
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      result.success = getUserBySessionToken(sessionToken) != null;
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+      }
+      return result;
+    }
+
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
   }
 
-  public chat.app.structs.User getUser(String sessionToken)
-  throws Exception {
-    chat.state.structs.User user = getUserBySessionToken(sessionToken);
-    if (user == null) {
-      return null;
+  public Result<chat.app.structs.User> getUser(String sessionToken) {
+    try {
+      Result<chat.app.structs.User> result
+      = new Result<chat.app.structs.User>();
+
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      chat.state.structs.User user = getUserBySessionToken(sessionToken);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      chat.app.structs.User appUser = new chat.app.structs.User();
+      appUser.name = user.name;
+      result.success = true;
+      result.successValue = appUser;
+      return result;
     }
 
-    chat.app.structs.User appUser = new chat.app.structs.User();
-    appUser.name = user.name;
-    return appUser;
+    catch (Exception error) {
+      Result<chat.app.structs.User> result
+      = new Result<chat.app.structs.User>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
   }
 
-  public boolean createUser(Credentials credentials)
-  throws Exception {
-    if (credentials == null || Utilities.nullOrEmpty(credentials.name)
-    || Utilities.nullOrEmpty(credentials.pw)) {
-      throw new IllegalArgumentException("Illegal argument");
-    }
+  public Result<Object> createUser(Credentials credentials) {
+    try {
+      Result<Object> result = new Result<Object>();
 
-    if (state.getUserByName(credentials.name) != null) {
-      return false;
-    }
+      if (credentials == null || Utilities.nullOrEmpty(credentials.name)
+      || Utilities.nullOrEmpty(credentials.pw)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
 
-    chat.state.structs.User user = new chat.state.structs.User();
-    user.name = credentials.name;
-    user.salt = Utilities.generateRandomString((short) 16);
-    user.hash = Utilities.generateHash(credentials.pw, user.salt);
-    return state.createUser(user);
-  }
+      if (state.getUserByName(credentials.name) != null) {
+        result.failureReason = Result.FailureReason.Conflict;
+        return result;
+      }
 
-  public boolean updateUser(String sessionToken, Credentials credentials)
-  throws Exception {
-    chat.state.structs.User user = getUserBySessionToken(sessionToken);
-
-    if (credentials == null || (Utilities.nullOrEmpty(credentials.name)
-    && Utilities.nullOrEmpty(credentials.pw))) {
-      throw new IllegalArgumentException("Illegal argument");
-    }
-
-    if (user == null) {
-      return false;
-    }
-
-    int userId = user.id;
-    user = new chat.state.structs.User();
-    user.id = userId;
-    if (!Utilities.nullOrEmpty(credentials.name)) {
+      chat.state.structs.User user = new chat.state.structs.User();
       user.name = credentials.name;
-    }
-    if (!Utilities.nullOrEmpty(credentials.pw)) {
       user.salt = Utilities.generateRandomString((short) 16);
       user.hash = Utilities.generateHash(credentials.pw, user.salt);
-    }
-    return state.updateUser(user);
-  }
-
-  public boolean deleteUser(String sessionToken)
-  throws Exception {
-    chat.state.structs.User user = getUserBySessionToken(sessionToken);
-    if (user == null) {
-      return false;
-    }
-
-    state.deleteSessionsByUserId(user.id);
-    return state.deleteUserById(user.id);
-  }
-
-  public chat.app.structs.Message[] getMessages(String sessionToken)
-  throws Exception {
-    chat.state.structs.User user = getUserBySessionToken(sessionToken);
-    if (user == null) {
-      return null;
-    }
-
-    HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
-    chat.state.structs.Message[] messages = state.getMessages();
-    chat.app.structs.Message[] appMessages
-    = new chat.app.structs.Message[messages.length];
-    for (int i = 0; i < messages.length; i++) {
-      appMessages[i] = new chat.app.structs.Message();
-      appMessages[i].outgoing = messages[i].userId == user.id;
-      if (!appMessages[i].outgoing) {
-        if (!userNameCache.containsKey(messages[i].userId)) {
-          chat.state.structs.User messageUser = state
-          .getUserById(messages[i].userId);
-          if (messageUser != null) {
-            userNameCache.put(messages[i].userId, messageUser.name);
-          } else {
-            userNameCache.put(messages[i].userId, "[Deleted user]");
-          }
-        }
-        appMessages[i].userName = userNameCache.get(messages[i].userId);
+      result.success = state.createUser(user);
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unknown;
       }
-      appMessages[i].timestamp = messages[i].timestamp;
-      appMessages[i].content = messages[i].content;
+      return result;
     }
-    return appMessages;
+
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
   }
 
-  public boolean createMessage(String sessionToken,
-  chat.app.structs.Message message)
-  throws Exception {
-    chat.state.structs.User user = getUserBySessionToken(sessionToken);
-    if (user == null) {
-      return false;
+  public Result<Object> updateUser(String sessionToken,
+  Credentials credentials) {
+    try {
+      Result<Object> result = new Result<Object>();
+
+      if (Utilities.nullOrEmpty(sessionToken) || credentials == null
+      || (Utilities.nullOrEmpty(credentials.name)
+      && Utilities.nullOrEmpty(credentials.pw))) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      chat.state.structs.User user = getUserBySessionToken(sessionToken);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      int userId = user.id;
+      user = new chat.state.structs.User();
+      user.id = userId;
+      if (!Utilities.nullOrEmpty(credentials.name)) {
+        if (state.getUserByName(credentials.name) != null) {
+          result.failureReason = Result.FailureReason.Conflict;
+          return result;
+        }
+        user.name = credentials.name;
+      }
+      if (!Utilities.nullOrEmpty(credentials.pw)) {
+        user.salt = Utilities.generateRandomString((short) 16);
+        user.hash = Utilities.generateHash(credentials.pw, user.salt);
+      }
+      result.success = state.updateUser(user);
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unknown;
+      }
+      return result;
     }
 
-    chat.state.structs.Message stateMessage = new chat.state.structs.Message();
-    stateMessage.userId = user.id;
-    stateMessage.timestamp = message.timestamp;
-    stateMessage.content = message.content;
-    return state.createMessage(stateMessage);
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
+  }
+
+  public Result<Object> deleteUser(String sessionToken) {
+    try {
+      Result<Object> result = new Result<Object>();
+
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      chat.state.structs.User user = getUserBySessionToken(sessionToken);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      state.deleteSessionsByUserId(user.id);
+      result.success = state.deleteUserById(user.id);
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unknown;
+      }
+      return result;
+    }
+
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
+  }
+
+  public Result<chat.app.structs.Message[]> getMessages(String sessionToken) {
+    try {
+      Result<chat.app.structs.Message[]> result
+      = new Result<chat.app.structs.Message[]>();
+
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      chat.state.structs.User user = getUserBySessionToken(sessionToken);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
+      chat.state.structs.Message[] messages = state.getMessages();
+      chat.app.structs.Message[] appMessages
+      = new chat.app.structs.Message[messages.length];
+      for (int i = 0; i < messages.length; i++) {
+        appMessages[i] = new chat.app.structs.Message();
+        appMessages[i].outgoing = messages[i].userId == user.id;
+        if (!appMessages[i].outgoing) {
+          if (!userNameCache.containsKey(messages[i].userId)) {
+            chat.state.structs.User messageUser = state
+            .getUserById(messages[i].userId);
+            if (messageUser != null) {
+              userNameCache.put(messages[i].userId, messageUser.name);
+            } else {
+              userNameCache.put(messages[i].userId, "[Deleted user]");
+            }
+          }
+          appMessages[i].userName = userNameCache.get(messages[i].userId);
+        }
+        appMessages[i].timestamp = messages[i].timestamp;
+        appMessages[i].content = messages[i].content;
+      }
+      result.success = true;
+      result.successValue = appMessages;
+      return result;
+    }
+
+    catch (Exception error) {
+      Result<chat.app.structs.Message[]> result
+      = new Result<chat.app.structs.Message[]>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
+  }
+
+  public Result<Object> createMessage(String sessionToken,
+  chat.app.structs.Message message) {
+    try {
+      Result<Object> result = new Result<Object>();
+
+      if (Utilities.nullOrEmpty(sessionToken) || message == null
+      || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
+        return result;
+      }
+
+      chat.state.structs.User user = getUserBySessionToken(sessionToken);
+      if (user == null) {
+        result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      chat.state.structs.Message stateMessage
+      = new chat.state.structs.Message();
+      stateMessage.userId = user.id;
+      stateMessage.timestamp = message.timestamp;
+      stateMessage.content = message.content;
+      result.success = state.createMessage(stateMessage);
+      if (!result.success) {
+        result.failureReason = Result.FailureReason.Unknown;
+      }
+      return result;
+    }
+
+    catch (Exception error) {
+      Result<Object> result = new Result<Object>();
+      result.failureReason = Result.FailureReason.Unknown;
+      return result;
+    }
   }
 
   private App(State state) {
@@ -181,10 +348,6 @@ public class App {
 
   private chat.state.structs.User getUserBySessionToken(String sessionToken)
   throws Exception {
-    if (Utilities.nullOrEmpty(sessionToken)) {
-      throw new IllegalArgumentException("Illegal argument");
-    }
-
     chat.state.structs.Session session = state.getSessionById(sessionToken);
     if (session == null) {
       return null;
@@ -195,5 +358,15 @@ public class App {
       state.deleteSessionById(session.id);
     }
     return user;
+  }
+
+  public class Result<T> {
+    public boolean success;
+    public T successValue;
+    public FailureReason failureReason;
+
+    public enum FailureReason {
+      Unknown, IllegalArgument, Unauthorized, NotFound, Conflict
+    }
   }
 }
