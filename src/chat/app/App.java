@@ -9,6 +9,12 @@ import java.util.*;
 public class App {
   public static App shared = new App(State.shared);
 
+  private static final String userNameAllowedChars
+  = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-_.";
+  private static final String userPwAllowedChars
+  = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=`!@#$%^&*("
+  + ")_+~,./<>?;':\"[]\\{}|";
+
   private State state;
 
   /*
@@ -186,7 +192,18 @@ public class App {
         return result;
       }
 
-      // TODO: Check credentials for illegal characters
+      for (char c : credentials.name.toCharArray()) {
+        if (userNameAllowedChars.indexOf(c) < 0) {
+          result.failureReason = Result.FailureReason.IllegalArgument;
+          return result;
+        }
+      }
+      for (char c : credentials.pw.toCharArray()) {
+        if (userPwAllowedChars.indexOf(c) < 0) {
+          result.failureReason = Result.FailureReason.IllegalArgument;
+          return result;
+        }
+      }
 
       if (state.getUserByName(credentials.name) != null) {
         result.failureReason = Result.FailureReason.Conflict;
