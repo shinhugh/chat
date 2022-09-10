@@ -35,7 +35,8 @@ public class SocketMessageConnection {
       }
       userName = userResult.successValue.name;
 
-      App.Result<Message[]> messagesResult = App.shared.getMessages(sessionToken);
+      App.Result<Message[]> messagesResult = App.shared
+      .getMessages(sessionToken);
       if (!messagesResult.success) {
         close();
         return;
@@ -78,39 +79,34 @@ public class SocketMessageConnection {
         return;
       }
 
-      Gson gson = new Gson();
-      MessageToServer incomingMessage = null;
-      try {
-        incomingMessage = gson.fromJson(incomingMessageJson,
-        MessageToServer.class);
-        if (incomingMessage == null
-        || Utilities.nullOrEmpty(incomingMessage.content)) {
-          return;
-        }
-      } catch (JsonSyntaxException error) {
-        return;
-      }
+      Message message = new Message();
 
       Instant currInstant = Instant.now();
-      long currMilli = currInstant.toEpochMilli();
-      String timestamp = currInstant.toString();
+      message.timestamp = currInstant.toEpochMilli();
 
-      Message message = new Message();
-      message.timestamp = currMilli;
-      message.content = incomingMessage.content;
+      Gson gson = new Gson();
+      try {
+        MessageToServer incomingMessage = gson.fromJson(incomingMessageJson,
+        MessageToServer.class);
+        if (incomingMessage != null) {
+          message.content = incomingMessage.content;
+        }
+      } catch (JsonSyntaxException error) { }
+
       if(!App.shared.createMessage(sessionToken, message).success) {
         return;
       }
 
+      String timestamp = currInstant.toString();
       MessageToClient outgoingMessageIn = new MessageToClient();
       outgoingMessageIn.userName = userName;
       outgoingMessageIn.timestamp = timestamp;
-      outgoingMessageIn.content = incomingMessage.content;
+      outgoingMessageIn.content = message.content;
       String outgoingMessageInJson = gson.toJson(outgoingMessageIn);
       MessageToClient outgoingMessageOut = new MessageToClient();
       outgoingMessageOut.outgoing = true;
       outgoingMessageOut.timestamp = timestamp;
-      outgoingMessageOut.content = incomingMessage.content;
+      outgoingMessageOut.content = message.content;
       String outgoingMessageOutJson = gson.toJson(outgoingMessageOut);
 
       for (SocketMessageConnection connection : connections) {

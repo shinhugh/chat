@@ -13,26 +13,24 @@ class RequestHandler {
   HttpServletResponse response, RequestHandlerCallback callback)
   throws IOException, ServletException {
     try {
-      String sessionToken = null;
+      RequestHandlerCallback.RequestData requestData
+      = new RequestHandlerCallback.RequestData();
       Cookie[] cookies = request.getCookies();
       if (cookies != null) {
         for (Cookie cookie : cookies) {
           if (cookie.getName().equals("session")) {
-            sessionToken = cookie.getValue();
+            requestData.sessionToken = cookie.getValue();
             break;
           }
         }
       }
-
-      RequestHandlerCallback.RequestData requestData
-      = new RequestHandlerCallback.RequestData();
-      requestData.sessionToken = sessionToken;
       requestData.contentType = request.getContentType();
       requestData.body = request.getReader().lines()
       .collect(Collectors.joining(System.lineSeparator()));
       if ("".equals(requestData.body)) {
         requestData.body = null;
       }
+
       RequestHandlerCallback.ResponseData responseData = callback
       .call(requestData);
 
@@ -51,7 +49,6 @@ class RequestHandler {
             String expiresString
             = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
             .withZone(ZoneId.of("GMT")).format(expiresInstant);
-
             cookieString = cookie.key + "=" + cookie.value
             + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
             + expiresString;

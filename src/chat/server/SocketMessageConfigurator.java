@@ -14,16 +14,14 @@ extends ServerEndpointConfig.Configurator {
     super.modifyHandshake(config, request, response);
 
     try {
-      List<String> cookies = request.getHeaders().get("cookie");
       String sessionToken = null;
-      for (String cookie : cookies) {
-        if (cookie.startsWith("session") && cookie.length() > 8) {
-          sessionToken = cookie.substring(8);
+      List<String> cookies = request.getHeaders().get("cookie");
+      if (cookies != null) {
+        for (String cookie : cookies) {
+          if (cookie.startsWith("session") && cookie.length() > 8) {
+            sessionToken = cookie.substring(8);
+          }
         }
-      }
-      if (Utilities.nullOrEmpty(sessionToken)) {
-        dropConnection(response);
-        return;
       }
       App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
       if (!result.success) {

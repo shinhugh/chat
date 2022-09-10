@@ -28,17 +28,12 @@ public class APILoginServlet extends HttpServlet {
     public RequestHandlerCallback.ResponseData call(
     RequestHandlerCallback.RequestData requestData) {
       RequestHandlerCallback.ResponseData responseData = new ResponseData();
-      if (Utilities.nullOrEmpty(requestData.body)) {
-        responseData.statusCode = 400;
-        return responseData;
-      }
       Credentials credentials = null;
-      try {
-        Gson gson = new Gson();
-        credentials = gson.fromJson(requestData.body, Credentials.class);
-      } catch (JsonSyntaxException error) {
-        responseData.statusCode = 400;
-        return responseData;
+      if (!Utilities.nullOrEmpty(requestData.body)) {
+        try {
+          Gson gson = new Gson();
+          credentials = gson.fromJson(requestData.body, Credentials.class);
+        } catch (JsonSyntaxException error) { }
       }
       App.Result<Session> result = App.shared.logIn(credentials);
       if (!result.success) {

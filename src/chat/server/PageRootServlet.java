@@ -14,21 +14,13 @@ public class PageRootServlet extends HttpServlet {
     try {
       String sessionToken = null;
       Cookie[] cookies = request.getCookies();
-      if (cookies == null) {
-        response.setStatus(HttpServletResponse.SC_FOUND);
-        response.setHeader("Location", "/login");
-        return;
-      }
-      for (Cookie cookie : cookies) {
-        if (cookie.getName().equals("session")) {
-          sessionToken = cookie.getValue();
-          break;
+      if (cookies != null) {
+        for (Cookie cookie : cookies) {
+          if (cookie.getName().equals("session")) {
+            sessionToken = cookie.getValue();
+            break;
+          }
         }
-      }
-      if (Utilities.nullOrEmpty(sessionToken)) {
-        response.setStatus(HttpServletResponse.SC_FOUND);
-        response.setHeader("Location", "/login");
-        return;
       }
       App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
       if (!result.success) {
