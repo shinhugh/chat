@@ -10,11 +10,10 @@ import java.util.stream.*;
 
 class RequestHandler {
   public static void handleRequest(HttpServletRequest request,
-  HttpServletResponse response, RequestHandlerCallback callback)
+  HttpServletResponse response, Callback callback)
   throws IOException, ServletException {
     try {
-      RequestHandlerCallback.RequestData requestData
-      = new RequestHandlerCallback.RequestData();
+      Callback.RequestData requestData = new Callback.RequestData();
       Cookie[] cookies = request.getCookies();
       if (cookies != null) {
         for (Cookie cookie : cookies) {
@@ -31,13 +30,11 @@ class RequestHandler {
         requestData.body = null;
       }
 
-      RequestHandlerCallback.ResponseData responseData = callback
-      .call(requestData);
+      Callback.ResponseData responseData = callback.call(requestData);
 
       response.setStatus(responseData.statusCode);
       if (responseData.cookies != null) {
-        for (RequestHandlerCallback.ResponseData.Cookie cookie
-        : responseData.cookies) {
+        for (Callback.ResponseData.Cookie cookie : responseData.cookies) {
           String cookieString = null;
           if (Utilities.nullOrEmpty(cookie.value) || cookie.expiration < 1) {
             cookieString = cookie.key + "=; Path=/; SameSite=Strict;"
@@ -71,4 +68,27 @@ class RequestHandler {
   }
 
   private RequestHandler() { }
+
+  public static interface Callback {
+    public ResponseData call(RequestData requestData);
+
+    public static class RequestData {
+      public String sessionToken;
+      public String contentType;
+      public String body;
+    }
+
+    public static class ResponseData {
+      public int statusCode;
+      public Cookie[] cookies;
+      public String contentType;
+      public String body;
+
+      public static class Cookie {
+        public String key;
+        public String value;
+        public long expiration;
+      }
+    }
+  }
 }

@@ -10,24 +10,22 @@ import java.io.*;
 
 public class APILoginServlet extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     RequestHandler.handleRequest(request, response,
     new PostRequestHandlerCallback());
   }
 
   public void doDelete(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
+  throws IOException, ServletException {
     RequestHandler.handleRequest(request, response,
     new DeleteRequestHandlerCallback());
   }
 
   private static class PostRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData = new ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new ResponseData();
       Credentials credentials = null;
       if (!Utilities.nullOrEmpty(requestData.body)) {
         try {
@@ -48,9 +46,9 @@ public class APILoginServlet extends HttpServlet {
         return responseData;
       }
       responseData.statusCode = 200;
-      responseData.cookies = new RequestHandlerCallback.ResponseData.Cookie[1];
+      responseData.cookies = new RequestHandler.Callback.ResponseData.Cookie[1];
       responseData.cookies[0]
-      = new RequestHandlerCallback.ResponseData.Cookie();
+      = new RequestHandler.Callback.ResponseData.Cookie();
       responseData.cookies[0].key = "session";
       responseData.cookies[0].value = result.successValue.token;
       responseData.cookies[0].expiration = result.successValue.expiration;
@@ -59,10 +57,10 @@ public class APILoginServlet extends HttpServlet {
   }
 
   private static class DeleteRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData = new ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new ResponseData();
       App.Result<Object> result = App.shared.logOut(requestData.sessionToken);
       if (!result.success) {
         switch(result.failureReason) {
@@ -76,9 +74,9 @@ public class APILoginServlet extends HttpServlet {
         return responseData;
       }
       responseData.statusCode = 200;
-      responseData.cookies = new RequestHandlerCallback.ResponseData.Cookie[1];
+      responseData.cookies = new RequestHandler.Callback.ResponseData.Cookie[1];
       responseData.cookies[0]
-      = new RequestHandlerCallback.ResponseData.Cookie();
+      = new RequestHandler.Callback.ResponseData.Cookie();
       responseData.cookies[0].key = "session";
       responseData.cookies[0].expiration = 0;
       return responseData;

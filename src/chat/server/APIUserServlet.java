@@ -34,11 +34,11 @@ public class APIUserServlet extends HttpServlet {
   }
 
   private static class GetRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData
-      = new RequestHandlerCallback.ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData
+      = new RequestHandler.Callback.ResponseData();
       App.Result<User> result = App.shared.getUser(requestData.sessionToken);
       if (!result.success) {
         switch(result.failureReason) {
@@ -61,11 +61,11 @@ public class APIUserServlet extends HttpServlet {
   }
 
   private static class PostRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData
-      = new RequestHandlerCallback.ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData
+      = new RequestHandler.Callback.ResponseData();
       Credentials credentials = null;
       if (!Utilities.nullOrEmpty(requestData.body)) {
         try {
@@ -92,11 +92,11 @@ public class APIUserServlet extends HttpServlet {
   }
 
   private static class PutRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData
-      = new RequestHandlerCallback.ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData
+      = new RequestHandler.Callback.ResponseData();
       Credentials credentials = null;
       if (!Utilities.nullOrEmpty(requestData.body)) {
         try {
@@ -127,11 +127,11 @@ public class APIUserServlet extends HttpServlet {
   }
 
   private static class DeleteRequestHandlerCallback
-  implements RequestHandlerCallback {
-    public RequestHandlerCallback.ResponseData call(
-    RequestHandlerCallback.RequestData requestData) {
-      RequestHandlerCallback.ResponseData responseData
-      = new RequestHandlerCallback.ResponseData();
+  implements RequestHandler.Callback {
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData
+      = new RequestHandler.Callback.ResponseData();
       App.Result<Object> result = App.shared.deleteUser(requestData
       .sessionToken);
       if (!result.success) {
