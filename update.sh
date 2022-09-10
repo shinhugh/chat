@@ -23,7 +23,7 @@ GROUP_NAME="tomcat10"
 
 # Compile Java source files.
 rm -rf $PATH_PREDEPLOY/WEB-INF/classes/*
-sudo -u dev javac -Xlint:unchecked -cp $PATH_JAVA_LIB/*:$PATH_PREDEPLOY/WEB-INF/lib/* -d $PATH_PREDEPLOY/WEB-INF/classes/ $PATH_SRC/chat/util/*.java $PATH_SRC/chat/state/*.java $PATH_SRC/chat/state/structs/*.java $PATH_SRC/chat/app/*.java $PATH_SRC/chat/app/structs/*.java $PATH_SRC/chat/server/*.java
+javac -Xlint:unchecked -cp $PATH_JAVA_LIB/*:$PATH_PREDEPLOY/WEB-INF/lib/* -d $PATH_PREDEPLOY/WEB-INF/classes/ $PATH_SRC/chat/util/*.java $PATH_SRC/chat/state/*.java $PATH_SRC/chat/state/structs/*.java $PATH_SRC/chat/app/*.java $PATH_SRC/chat/app/structs/*.java $PATH_SRC/chat/server/*.java
 if [[ $? -ne 0 ]] ; then
   rm -rf $PATH_PREDEPLOY/WEB-INF/classes/*
   exit 1
