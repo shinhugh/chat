@@ -2,9 +2,8 @@ package chat.state;
 
 // TODO: Thread safety for shared Connection instance
 
-import chat.*;
 import chat.state.structs.*;
-import java.lang.*;
+import chat.util.*;
 import java.sql.*;
 import java.util.*;
 

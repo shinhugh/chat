@@ -1,9 +1,9 @@
 package chat.app;
 
-import chat.*;
 import chat.app.structs.*;
 import chat.state.*;
 import chat.state.structs.*;
+import chat.util.*;
 import java.util.*;
 
 public class App {
@@ -20,7 +20,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<chat.app.structs.Session> logIn(Credentials credentials) {
@@ -30,7 +29,7 @@ public class App {
 
       if (credentials == null || Utilities.nullOrEmpty(credentials.name)
       || Utilities.nullOrEmpty(credentials.pw)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -79,7 +78,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<Object> logOut(String sessionToken) {
@@ -87,7 +85,7 @@ public class App {
       Result<Object> result = new Result<Object>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -113,7 +111,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<Object> verifySessionToken(String sessionToken) {
@@ -121,7 +118,7 @@ public class App {
       Result<Object> result = new Result<Object>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -142,7 +139,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<chat.app.structs.User> getUser(String sessionToken) {
@@ -151,7 +147,7 @@ public class App {
       = new Result<chat.app.structs.User>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -231,8 +227,8 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
+   * - IllegalArgument
    * - Conflict
    */
   public Result<Object> updateUser(String sessionToken,
@@ -240,16 +236,20 @@ public class App {
     try {
       Result<Object> result = new Result<Object>();
 
-      if (Utilities.nullOrEmpty(sessionToken) || credentials == null
-      || (Utilities.nullOrEmpty(credentials.name)
-      && Utilities.nullOrEmpty(credentials.pw))) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
       chat.state.structs.User user = getUserBySessionToken(sessionToken);
       if (user == null) {
         result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      if (credentials == null || (Utilities.nullOrEmpty(credentials.name)
+      && Utilities.nullOrEmpty(credentials.pw))) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
 
@@ -284,7 +284,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<Object> deleteUser(String sessionToken) {
@@ -292,7 +291,7 @@ public class App {
       Result<Object> result = new Result<Object>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -320,7 +319,6 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
    */
   public Result<chat.app.structs.Message[]> getMessages(String sessionToken) {
@@ -329,7 +327,7 @@ public class App {
       = new Result<chat.app.structs.Message[]>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
@@ -377,23 +375,28 @@ public class App {
   /*
    * Possible FailureReason values:
    * - Unknown
-   * - IllegalArgument
    * - Unauthorized
+   * - IllegalArgument
    */
   public Result<Object> createMessage(String sessionToken,
   chat.app.structs.Message message) {
     try {
       Result<Object> result = new Result<Object>();
 
-      if (Utilities.nullOrEmpty(sessionToken) || message == null
-      || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
-        result.failureReason = Result.FailureReason.IllegalArgument;
+      if (Utilities.nullOrEmpty(sessionToken)) {
+        result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
 
       chat.state.structs.User user = getUserBySessionToken(sessionToken);
       if (user == null) {
         result.failureReason = Result.FailureReason.Unauthorized;
+        return result;
+      }
+
+      if (message == null || message.timestamp < 0
+      || Utilities.nullOrEmpty(message.content)) {
+        result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
 
@@ -434,7 +437,7 @@ public class App {
     return user;
   }
 
-  public class Result<T> {
+  public static class Result<T> {
     public boolean success;
     public T successValue;
     public FailureReason failureReason;

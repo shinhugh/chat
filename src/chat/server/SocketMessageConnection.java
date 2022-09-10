@@ -1,9 +1,8 @@
 package chat.server;
 
-import chat.*;
 import chat.app.*;
 import chat.app.structs.*;
-import chat.server.structs.*;
+import chat.util.*;
 import com.google.gson.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
@@ -147,5 +146,16 @@ public class SocketMessageConnection {
     try {
       wsSession.close();
     } catch (IOException error) { }
+  }
+
+  private static class MessageToServer {
+    public String content;
+  }
+
+  private static class MessageToClient {
+    public boolean outgoing;
+    public String userName;
+    public String timestamp;
+    public String content;
   }
 }

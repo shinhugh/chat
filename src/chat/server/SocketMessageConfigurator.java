@@ -1,7 +1,7 @@
 package chat.server;
 
-import chat.*;
 import chat.app.*;
+import chat.util.*;
 import jakarta.websocket.*;
 import jakarta.websocket.server.*;
 import java.util.*;

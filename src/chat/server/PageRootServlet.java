@@ -1,7 +1,7 @@
 package chat.server;
 
-import chat.*;
 import chat.app.*;
+import chat.util.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
@@ -33,7 +33,6 @@ public class PageRootServlet extends HttpServlet {
       App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
       if (!result.success) {
         switch(result.failureReason) {
-          case IllegalArgument:
           case Unauthorized:
             response.setStatus(HttpServletResponse.SC_FOUND);
             response.setHeader("Location", "/login");

@@ -1,4 +1,4 @@
-package chat;
+package chat.util;
 
 import java.nio.charset.*;
 import java.security.*;
