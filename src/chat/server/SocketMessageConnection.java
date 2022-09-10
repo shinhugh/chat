@@ -110,6 +110,11 @@ public class SocketMessageConnection {
       String outgoingMessageOutJson = gson.toJson(outgoingMessageOut);
 
       for (SocketMessageConnection connection : connections) {
+        if (!App.shared.verifySessionToken(connection.sessionToken).success) {
+          connection.close();
+          continue;
+        }
+
         String outgoingMessageJson = null;
         if (connection.userName.equals(userName)) {
           outgoingMessageJson = outgoingMessageOutJson;
