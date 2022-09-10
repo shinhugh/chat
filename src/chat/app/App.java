@@ -15,7 +15,7 @@ public class App {
   = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=`!@#$%^&*("
   + ")_+~,./<>?;':\"[]\\{}|";
 
-  private State state;
+  private final State state;
 
   /*
    * Possible FailureReason values:
