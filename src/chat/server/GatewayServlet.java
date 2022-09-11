@@ -6,19 +6,33 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
 
-public class PageRootServlet extends HttpServlet {
-  private static final String resourcePath = "/404.html";
-  private static final String contentType = "text/html";
+public class GatewayServlet extends HttpServlet {
+  private static final String[] implementedMethods = {"GET", "POST", "PUT",
+  "DELETE", "HEAD", "OPTIONS", "TRACE"};
+
+  protected void service(HttpServletRequest request,
+  HttpServletResponse response)
+  throws IOException, ServletException {
+    boolean methodImplemented = false;
+    for (String implementedMethod : implementedMethods) {
+      if (request.getMethod().equals(implementedMethod)) {
+        methodImplemented = true;
+        break;
+      }
+    }
+    if (!methodImplemented) {
+      response.setStatus(501);
+      return;
+    }
+    if (!"/".equals(request.getServletPath())) {
+      response.setStatus(404);
+      return;
+    }
+    super.service(request, response);
+  }
 
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    if (!"/".equals(request.getServletPath())) {
-      response.setStatus(404);
-      response.setContentType(contentType);
-      PrintWriter bodyWriter = response.getWriter();
-      bodyWriter.print(Utilities.readPublicFile(resourcePath));
-      return;
-    }
     RequestHandler.handleRequest(request, response,
     new GetRequestHandlerCallback());
   }

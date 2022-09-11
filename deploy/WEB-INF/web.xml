@@ -16,6 +16,11 @@
     </context-param>
 
     <servlet>
+      <servlet-name>gateway</servlet-name>
+      <servlet-class>chat.server.GatewayServlet</servlet-class>
+    </servlet>
+
+    <servlet>
       <servlet-name>apiLogin</servlet-name>
       <servlet-class>chat.server.APILoginServlet</servlet-class>
     </servlet>
@@ -23,11 +28,6 @@
     <servlet>
       <servlet-name>apiUser</servlet-name>
       <servlet-class>chat.server.APIUserServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-      <servlet-name>pageRoot</servlet-name>
-      <servlet-class>chat.server.PageRootServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -39,6 +39,11 @@
       <servlet-name>pageChat</servlet-name>
       <servlet-class>chat.server.PageChatServlet</servlet-class>
     </servlet>
+
+    <servlet-mapping>
+      <servlet-name>gateway</servlet-name>
+      <url-pattern>/</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
       <servlet-name>default</servlet-name>
@@ -53,11 +58,6 @@
     <servlet-mapping>
       <servlet-name>apiUser</servlet-name>
       <url-pattern>/api/user</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>pageRoot</servlet-name>
-      <url-pattern></url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
