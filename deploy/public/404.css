@@ -13,5 +13,28 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
   background: #2e3440;
+}
+
+#p_title {
+  display: block;
+  font-size: x-large;
+}
+
+#img_notfound {
+  max-width: 50%;
+  max-height: 40%;
+}
+
+#a_link {
+  font-size: large;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+#a_link:hover {
+  text-decoration: underline;
 }
