@@ -10,8 +10,7 @@ import java.util.stream.*;
 
 class RequestHandler {
   public static void handleRequest(HttpServletRequest request,
-  HttpServletResponse response, Callback callback)
-  throws IOException, ServletException {
+  HttpServletResponse response, Callback callback) {
     try {
       Callback.RequestData requestData = new Callback.RequestData();
       Cookie[] cookies = request.getCookies();
