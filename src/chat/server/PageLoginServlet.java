@@ -8,45 +8,54 @@ import java.nio.file.*;
 
 public class PageLoginServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
-  throws IOException, ServletException
-  {
-    try {
-      String sessionToken = null;
-      Cookie[] cookies = request.getCookies();
-      if (cookies != null) {
-        for (Cookie cookie : cookies) {
-          if (cookie.getName().equals("session")) {
-            sessionToken = cookie.getValue();
-            break;
-          }
-        }
-      }
-      App.Result<Object> result = App.shared.verifySessionToken(sessionToken);
+  throws IOException, ServletException {
+    RequestHandler.handleRequest(request, response,
+    new GetRequestHandlerCallback());
+  }
+
+  private static class GetRequestHandlerCallback
+  implements RequestHandler.Callback {
+    private static final String resourcePath = "/public/login/index.html";
+    private static final String redirectLocation = "/";
+
+    public RequestHandler.Callback.ResponseData call(
+    RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new ResponseData();
+      App.Result<Object> result = App.shared
+      .verifySessionToken(requestData.sessionToken);
       if (result.success) {
-        response.setStatus(HttpServletResponse.SC_FOUND);
-        response.setHeader("Location", "/");
-        return;
+        responseData.statusCode = 302;
+        responseData.location = redirectLocation;
+        return responseData;
       }
       if (result.failureReason == App.Result.FailureReason.Unknown) {
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        return;
+        responseData.statusCode = 500;
+        return responseData;
       }
-
-      response.setStatus(HttpServletResponse.SC_OK);
-      response.setContentType("text/html");
-      PrintWriter out = response.getWriter();
-      String path = System.getProperty("catalina.base")
-      + "/webapps/ROOT/public/login/index.html";
-      BufferedReader fileReader = Files.newBufferedReader(Paths.get(path));
-      String line = fileReader.readLine();
-      while (line != null) {
-        out.println(line);
-        line = fileReader.readLine();
+      String body = null;
+      StringBuilder sb = new StringBuilder();
+      String path = System.getProperty("catalina.base") + "/webapps/ROOT"
+      + resourcePath;
+      try {
+        BufferedReader fileReader = Files.newBufferedReader(Paths.get(path));
+        String line = fileReader.readLine();
+        while (line != null) {
+          sb.append(line);
+          sb.append('\n');
+          line = fileReader.readLine();
+        }
+      } catch (IOException error) {
+        responseData.statusCode = 500;
+        return responseData;
       }
-    }
-
-    catch (Exception error) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      if (sb.length() > 0) {
+        sb.deleteCharAt(sb.length() - 1);
+        body = sb.toString();
+      }
+      responseData.statusCode = 200;
+      responseData.contentType = "text/html";
+      responseData.body = body;
+      return responseData;
     }
   }
 }

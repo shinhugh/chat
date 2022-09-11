@@ -53,10 +53,13 @@ class RequestHandler {
           response.setHeader("Set-Cookie", cookieString);
         }
       }
-      if (responseData.contentType != null) {
+      if (!Utilities.nullOrEmpty(responseData.location)) {
+        response.setHeader("Location", responseData.location);
+      }
+      if (!Utilities.nullOrEmpty(responseData.contentType)) {
         response.setContentType(responseData.contentType);
       }
-      if (responseData.body != null) {
+      if (!Utilities.nullOrEmpty(responseData.body)) {
         PrintWriter out = response.getWriter();
         out.print(responseData.body);
       }
@@ -81,6 +84,7 @@ class RequestHandler {
     public static class ResponseData {
       public int statusCode;
       public Cookie[] cookies;
+      public String location;
       public String contentType;
       public String body;
 
