@@ -13,7 +13,7 @@ public class PageRootServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
     if (!"/".equals(request.getServletPath())) {
-      response.setStatus(403);
+      response.setStatus(404);
       response.setContentType(contentType);
       PrintWriter bodyWriter = response.getWriter();
       bodyWriter.print(Utilities.readPublicFile(resourcePath));
