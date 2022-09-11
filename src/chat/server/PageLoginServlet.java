@@ -16,7 +16,7 @@ public class PageLoginServlet extends HttpServlet {
   private static class GetRequestHandlerCallback
   implements RequestHandler.Callback {
     private static final String resourcePath = "/public/login/index.html";
-    private static final String redirectLocation = "/";
+    private static final String redirectLocation = "/chat";
 
     public RequestHandler.Callback.ResponseData call(
     RequestHandler.Callback.RequestData requestData) {

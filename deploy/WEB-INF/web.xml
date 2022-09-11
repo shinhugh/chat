@@ -26,8 +26,8 @@
     </servlet>
 
     <servlet>
-      <servlet-name>pageRoot</servlet-name>
-      <servlet-class>chat.server.PageRootServlet</servlet-class>
+      <servlet-name>pageChat</servlet-name>
+      <servlet-class>chat.server.PageChatServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -51,14 +51,24 @@
     </servlet-mapping>
 
     <servlet-mapping>
-      <servlet-name>pageRoot</servlet-name>
-      <url-pattern>/</url-pattern>
+      <servlet-name>pageChat</servlet-name>
+      <url-pattern>/chat</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
       <servlet-name>pageLogin</servlet-name>
       <url-pattern>/login</url-pattern>
     </servlet-mapping>
+
+    <error-page>
+      <error-code>404</error-code>
+      <location>/public/404.html</location>
+    </error-page>
+
+    <error-page>
+      <error-code>405</error-code>
+      <location>/public/405.html</location>
+    </error-page>
 
     <session-config>
       <session-timeout>60</session-timeout>

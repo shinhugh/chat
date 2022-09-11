@@ -68,7 +68,7 @@ loginSubmit.onclick = () => {
     'pw': userPw
   })
   .then(() => {
-    location.href = '/';
+    location.href = '/chat';
   })
   .catch(() => {
     showOverlayNotification('Unable to login', 2000);
@@ -115,7 +115,7 @@ signupSubmit.onclick = () => {
     });
   })
   .then(() => {
-    location.href = '/';
+    location.href = '/chat';
   })
   .catch(() => {
     showOverlayNotification('Unable to sign up or login', 2000);

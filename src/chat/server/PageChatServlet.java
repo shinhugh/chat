@@ -6,7 +6,7 @@ import jakarta.servlet.http.*;
 import java.io.*;
 import java.nio.file.*;
 
-public class PageRootServlet extends HttpServlet {
+public class PageChatServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
     RequestHandler.handleRequest(request, response,
@@ -15,7 +15,7 @@ public class PageRootServlet extends HttpServlet {
 
   private static class GetRequestHandlerCallback
   implements RequestHandler.Callback {
-    private static final String resourcePath = "/public/index.html";
+    private static final String resourcePath = "/public/chat/index.html";
     private static final String redirectLocation = "/login";
 
     public RequestHandler.Callback.ResponseData call(
