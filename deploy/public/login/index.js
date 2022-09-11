@@ -1,11 +1,11 @@
-// Required: /public/api.js
+// Required: /public/apiHttp.js
 
 // --------------------------------------------------
 
 // Constants
 
-const userApi = '/api/user';
-const loginApi = '/api/login';
+const userApiUrl = '/api/user';
+const loginApiUrl = '/api/login';
 
 // --------------------------------------------------
 
@@ -63,7 +63,7 @@ loginSubmit.onclick = () => {
   }
   let userName = loginUserName.value;
   let userPw = loginUserPw.value;
-  apiCreate(loginApi, null, {
+  apiHttp.create(loginApiUrl, null, {
     'name': userName,
     'pw': userPw
   })
@@ -104,12 +104,12 @@ signupSubmit.onclick = () => {
   }
   let userName = signupUserName.value;
   let userPw = signupUserPw.value;
-  apiCreate(userApi, null, {
+  apiHttp.create(userApiUrl, null, {
     'name': userName,
     'pw': userPw
   })
   .then(() => {
-    return apiCreate(loginApi, null, {
+    return apiHttp.create(loginApiUrl, null, {
       'name': userName,
       'pw': userPw
     });

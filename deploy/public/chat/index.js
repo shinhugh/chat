@@ -1,4 +1,4 @@
-// Required: /public/api.js
+// Required: /public/apiHttp.js
 
 // --------------------------------------------------
 
@@ -84,7 +84,7 @@ chatComposerContent.focus();
 
 // Display user name
 
-apiRead(userApiUrl, null)
+apiHttp.read(userApiUrl, null)
 .then((obj) => {
   userName.innerHTML = obj['name'];
 })
@@ -99,7 +99,7 @@ apiRead(userApiUrl, null)
 
 logoutSubmit.onclick = () => {
   logoutSubmit.disabled = true;
-  apiDelete(loginApiUrl, null)
+  apiHttp.delete(loginApiUrl, null)
   .then(() => {
     location.href = '/login';
   })
