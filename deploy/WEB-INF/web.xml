@@ -71,6 +71,16 @@
     </servlet-mapping>
 
     <error-page>
+      <error-code>400</error-code>
+      <location>/public/400.txt</location>
+    </error-page>
+
+    <error-page>
+      <error-code>403</error-code>
+      <location>/public/403.txt</location>
+    </error-page>
+
+    <error-page>
       <error-code>404</error-code>
       <location>/public/404.html</location>
     </error-page>
