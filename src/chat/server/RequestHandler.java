@@ -31,7 +31,11 @@ class RequestHandler {
 
       Callback.ResponseData responseData = callback.call(requestData);
 
-      response.setStatus(responseData.statusCode);
+      if (responseData.statusCode >= 400 && responseData.statusCode <= 599) {
+        response.sendError(responseData.statusCode);
+      } else {
+        response.setStatus(responseData.statusCode);
+      }
       if (responseData.cookies != null) {
         for (Callback.ResponseData.Cookie cookie : responseData.cookies) {
           String cookieString = null;
@@ -59,13 +63,12 @@ class RequestHandler {
         response.setContentType(responseData.contentType);
       }
       if (!Utilities.nullOrEmpty(responseData.body)) {
-        PrintWriter bodyWriter = response.getWriter();
-        bodyWriter.print(responseData.body);
+        response.getWriter().println(responseData.body);
       }
     }
 
     catch (Exception error) {
-      response.setStatus(500);
+      response.sendError(500);
     }
   }
 

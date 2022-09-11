@@ -13,21 +13,29 @@ public class GatewayServlet extends HttpServlet {
   protected void service(HttpServletRequest request,
   HttpServletResponse response)
   throws IOException, ServletException {
-    boolean methodImplemented = false;
-    for (String implementedMethod : implementedMethods) {
-      if (request.getMethod().equals(implementedMethod)) {
-        methodImplemented = true;
-        break;
+    try {
+      boolean methodImplemented = false;
+      for (String implementedMethod : implementedMethods) {
+        if (implementedMethod.equals(request.getMethod())) {
+          methodImplemented = true;
+          break;
+        }
+      }
+      if (!methodImplemented) {
+        response.sendError(501);
+        return;
+      }
+      if (!"/".equals(request.getServletPath())) {
+        response.sendError(404);
+        return;
       }
     }
-    if (!methodImplemented) {
-      response.setStatus(501);
+
+    catch (Exception error) {
+      response.sendError(500);
       return;
     }
-    if (!"/".equals(request.getServletPath())) {
-      response.setStatus(404);
-      return;
-    }
+
     super.service(request, response);
   }
 
