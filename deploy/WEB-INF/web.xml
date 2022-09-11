@@ -77,7 +77,7 @@
 
     <error-page>
       <error-code>405</error-code>
-      <location>/public/405.html</location>
+      <location>/public/405.txt</location>
     </error-page>
 
     <error-page>
