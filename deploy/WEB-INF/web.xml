@@ -16,13 +16,18 @@
     </context-param>
 
     <servlet>
+      <servlet-name>apiLogin</servlet-name>
+      <servlet-class>chat.server.APILoginServlet</servlet-class>
+    </servlet>
+
+    <servlet>
       <servlet-name>apiUser</servlet-name>
       <servlet-class>chat.server.APIUserServlet</servlet-class>
     </servlet>
 
     <servlet>
-      <servlet-name>apiLogin</servlet-name>
-      <servlet-class>chat.server.APILoginServlet</servlet-class>
+      <servlet-name>pageRoot</servlet-name>
+      <servlet-class>chat.server.PageRootServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -41,13 +46,18 @@
     </servlet-mapping>
 
     <servlet-mapping>
+      <servlet-name>apiLogin</servlet-name>
+      <url-pattern>/api/login</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
       <servlet-name>apiUser</servlet-name>
       <url-pattern>/api/user</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
-      <servlet-name>apiLogin</servlet-name>
-      <url-pattern>/api/login</url-pattern>
+      <servlet-name>pageRoot</servlet-name>
+      <url-pattern></url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

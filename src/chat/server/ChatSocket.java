@@ -10,11 +10,9 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-@ServerEndpoint(value = "/socket/message",
-configurator = SocketMessageConnection.Configurator.class)
-public class SocketMessageConnection {
-  private static Set<SocketMessageConnection> connections
-  = new CopyOnWriteArraySet<>();
+@ServerEndpoint(value = "/chat", configurator = ChatSocket.Configurator.class)
+public class ChatSocket {
+  private static Set<ChatSocket> connections = new CopyOnWriteArraySet<>();
 
   private jakarta.websocket.Session wsSession;
   private String sessionToken;
@@ -108,7 +106,7 @@ public class SocketMessageConnection {
       outgoingMessageOut.content = message.content;
       String outgoingMessageOutJson = gson.toJson(outgoingMessageOut);
 
-      for (SocketMessageConnection connection : connections) {
+      for (ChatSocket connection : connections) {
         if (!App.shared.verifySessionToken(connection.sessionToken).success) {
           connection.close();
           continue;
