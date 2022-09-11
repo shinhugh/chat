@@ -7,10 +7,8 @@ import java.security.*;
 import java.util.*;
 
 public class Utilities {
-  private static final String publicPath = System.getProperty("catalina.base")
-  + "/webapps/ROOT/public";
-  private static final byte[] hexPool = "0123456789abcdef"
-  .getBytes(StandardCharsets.US_ASCII);
+  private static final String publicPath = System.getProperty("catalina.base") + "/webapps/ROOT/public";
+  private static final byte[] hexPool = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
 
   public static boolean nullOrEmpty(String str) {
     return str == null || "".equals(str);
@@ -39,8 +37,7 @@ public class Utilities {
     if (length < 1) {
       return "";
     }
-    String pool
-    = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+    String pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
     StringBuilder builder = new StringBuilder();
     Random random = new Random();
     while (builder.length() < length) {

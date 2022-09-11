@@ -9,11 +9,9 @@ import java.util.*;
 public class App {
   public static App shared = new App(State.shared);
 
-  private static final String userNameAllowedChars
-  = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-_.";
-  private static final String userPwAllowedChars
-  = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=`!@#$%^&*("
-  + ")_+~,./<>?;':\"[]\\{}|";
+  private static final String userNameAllowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-_.";
+  private static final String userPwAllowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=`!@#$%^&*()_+~,./<>?;':\"[]\\{}|";
+  private static final long sessionDuration = 86400000;
 
   private final State state;
 
@@ -24,11 +22,9 @@ public class App {
    */
   public Result<chat.app.structs.Session> logIn(Credentials credentials) {
     try {
-      Result<chat.app.structs.Session> result
-      = new Result<chat.app.structs.Session>();
+      Result<chat.app.structs.Session> result = new Result<chat.app.structs.Session>();
 
-      if (credentials == null || Utilities.nullOrEmpty(credentials.name)
-      || Utilities.nullOrEmpty(credentials.pw)) {
+      if (credentials == null || Utilities.nullOrEmpty(credentials.name) || Utilities.nullOrEmpty(credentials.pw)) {
         result.failureReason = Result.FailureReason.Unauthorized;
         return result;
       }
@@ -47,14 +43,13 @@ public class App {
 
       chat.state.structs.Session session = new chat.state.structs.Session();
       session.id = Utilities.generateRandomString(32);
-      chat.state.structs.Session duplicateSession = state
-      .getSessionById(session.id);
+      chat.state.structs.Session duplicateSession = state.getSessionById(session.id);
       while (duplicateSession != null) {
         session.id = Utilities.generateRandomString(32);
         duplicateSession = state.getSessionById(session.id);
       }
       session.userId = user.id;
-      session.expiration = System.currentTimeMillis() + 86400000;
+      session.expiration = System.currentTimeMillis() + sessionDuration;
       if (state.createSession(session)) {
         chat.app.structs.Session appSession = new chat.app.structs.Session();
         appSession.token = session.id;
@@ -68,8 +63,7 @@ public class App {
     }
 
     catch (Exception error) {
-      Result<chat.app.structs.Session> result
-      = new Result<chat.app.structs.Session>();
+      Result<chat.app.structs.Session> result = new Result<chat.app.structs.Session>();
       result.failureReason = Result.FailureReason.Unknown;
       return result;
     }
@@ -143,8 +137,7 @@ public class App {
    */
   public Result<chat.app.structs.User> getUser(String sessionToken) {
     try {
-      Result<chat.app.structs.User> result
-      = new Result<chat.app.structs.User>();
+      Result<chat.app.structs.User> result = new Result<chat.app.structs.User>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
         result.failureReason = Result.FailureReason.Unauthorized;
@@ -165,8 +158,7 @@ public class App {
     }
 
     catch (Exception error) {
-      Result<chat.app.structs.User> result
-      = new Result<chat.app.structs.User>();
+      Result<chat.app.structs.User> result = new Result<chat.app.structs.User>();
       result.failureReason = Result.FailureReason.Unknown;
       return result;
     }
@@ -182,8 +174,7 @@ public class App {
     try {
       Result<Object> result = new Result<Object>();
 
-      if (credentials == null || Utilities.nullOrEmpty(credentials.name)
-      || Utilities.nullOrEmpty(credentials.pw)) {
+      if (credentials == null || Utilities.nullOrEmpty(credentials.name) || Utilities.nullOrEmpty(credentials.pw)) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
@@ -231,8 +222,7 @@ public class App {
    * - IllegalArgument
    * - Conflict
    */
-  public Result<Object> updateUser(String sessionToken,
-  Credentials credentials) {
+  public Result<Object> updateUser(String sessionToken, Credentials credentials) {
     try {
       Result<Object> result = new Result<Object>();
 
@@ -247,8 +237,7 @@ public class App {
         return result;
       }
 
-      if (credentials == null || (Utilities.nullOrEmpty(credentials.name)
-      && Utilities.nullOrEmpty(credentials.pw))) {
+      if (credentials == null || (Utilities.nullOrEmpty(credentials.name) && Utilities.nullOrEmpty(credentials.pw))) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
@@ -323,8 +312,7 @@ public class App {
    */
   public Result<chat.app.structs.Message[]> getMessages(String sessionToken) {
     try {
-      Result<chat.app.structs.Message[]> result
-      = new Result<chat.app.structs.Message[]>();
+      Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
 
       if (Utilities.nullOrEmpty(sessionToken)) {
         result.failureReason = Result.FailureReason.Unauthorized;
@@ -339,15 +327,13 @@ public class App {
 
       HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
       chat.state.structs.Message[] messages = state.getMessages();
-      chat.app.structs.Message[] appMessages
-      = new chat.app.structs.Message[messages.length];
+      chat.app.structs.Message[] appMessages = new chat.app.structs.Message[messages.length];
       for (int i = 0; i < messages.length; i++) {
         appMessages[i] = new chat.app.structs.Message();
         appMessages[i].outgoing = messages[i].userId == user.id;
         if (!appMessages[i].outgoing) {
           if (!userNameCache.containsKey(messages[i].userId)) {
-            chat.state.structs.User messageUser = state
-            .getUserById(messages[i].userId);
+            chat.state.structs.User messageUser = state.getUserById(messages[i].userId);
             if (messageUser != null) {
               userNameCache.put(messages[i].userId, messageUser.name);
             } else {
@@ -365,8 +351,7 @@ public class App {
     }
 
     catch (Exception error) {
-      Result<chat.app.structs.Message[]> result
-      = new Result<chat.app.structs.Message[]>();
+      Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
       result.failureReason = Result.FailureReason.Unknown;
       return result;
     }
@@ -378,8 +363,7 @@ public class App {
    * - Unauthorized
    * - IllegalArgument
    */
-  public Result<Object> createMessage(String sessionToken,
-  chat.app.structs.Message message) {
+  public Result<Object> createMessage(String sessionToken, chat.app.structs.Message message) {
     try {
       Result<Object> result = new Result<Object>();
 
@@ -394,14 +378,12 @@ public class App {
         return result;
       }
 
-      if (message == null || message.timestamp < 0
-      || Utilities.nullOrEmpty(message.content)) {
+      if (message == null || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
 
-      chat.state.structs.Message stateMessage
-      = new chat.state.structs.Message();
+      chat.state.structs.Message stateMessage = new chat.state.structs.Message();
       stateMessage.userId = user.id;
       stateMessage.timestamp = message.timestamp;
       stateMessage.content = message.content;

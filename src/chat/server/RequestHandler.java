@@ -9,8 +9,7 @@ import java.time.format.*;
 import java.util.stream.*;
 
 class RequestHandler {
-  public static void handleRequest(HttpServletRequest request,
-  HttpServletResponse response, Callback callback) {
+  public static void handleRequest(HttpServletRequest request, HttpServletResponse response, Callback callback) {
     try {
       Callback.RequestData requestData = new Callback.RequestData();
       Cookie[] cookies = request.getCookies();
@@ -23,8 +22,7 @@ class RequestHandler {
         }
       }
       requestData.contentType = request.getContentType();
-      requestData.body = request.getReader().lines()
-      .collect(Collectors.joining(System.lineSeparator()));
+      requestData.body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
       if ("".equals(requestData.body)) {
         requestData.body = null;
       }
@@ -35,18 +33,12 @@ class RequestHandler {
         for (Callback.ResponseData.Cookie cookie : responseData.cookies) {
           String cookieString = null;
           if (Utilities.nullOrEmpty(cookie.value) || cookie.expiration < 1) {
-            cookieString = cookie.key + "=; Path=/; SameSite=Strict;"
-            + " Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
+            cookieString = cookie.key + "=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT";
           } else {
-            int maxAge = (int) ((cookie.expiration - System.currentTimeMillis())
-            / 1000);
+            int maxAge = (int) ((cookie.expiration - System.currentTimeMillis()) / 1000);
             Instant expiresInstant = Instant.ofEpochMilli(cookie.expiration);
-            String expiresString
-            = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z")
-            .withZone(ZoneId.of("GMT")).format(expiresInstant);
-            cookieString = cookie.key + "=" + cookie.value
-            + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires="
-            + expiresString;
+            String expiresString = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").withZone(ZoneId.of("GMT")).format(expiresInstant);
+            cookieString = cookie.key + "=" + cookie.value + "; Path=/; SameSite=Strict; Max-Age=" + maxAge + "; Expires=" + expiresString;
           }
           response.setHeader("Set-Cookie", cookieString);
         }

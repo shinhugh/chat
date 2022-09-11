@@ -23,8 +23,7 @@ public class ChatSocket {
     try {
       this.wsSession = wsSession;
       connections.add(this);
-      sessionToken = (String) this.wsSession.getUserProperties()
-      .get("sessionToken");
+      sessionToken = (String) this.wsSession.getUserProperties().get("sessionToken");
       App.Result<User> userResult = App.shared.getUser(sessionToken);
       if (!userResult.success) {
         close();
@@ -32,8 +31,7 @@ public class ChatSocket {
       }
       userName = userResult.successValue.name;
 
-      App.Result<Message[]> messagesResult = App.shared
-      .getMessages(sessionToken);
+      App.Result<Message[]> messagesResult = App.shared.getMessages(sessionToken);
       if (!messagesResult.success) {
         close();
         return;
@@ -43,8 +41,7 @@ public class ChatSocket {
         MessageToClient messageToClient = new MessageToClient();
         messageToClient.outgoing = message.outgoing;
         messageToClient.userName = message.userName;
-        messageToClient.timestamp = Instant.ofEpochMilli(message.timestamp)
-        .toString();
+        messageToClient.timestamp = Instant.ofEpochMilli(message.timestamp).toString();
         messageToClient.content = message.content;
         String outgoingMessageJson = gson.toJson(messageToClient);
         try {
@@ -83,8 +80,7 @@ public class ChatSocket {
 
       Gson gson = new Gson();
       try {
-        MessageToServer incomingMessage = gson.fromJson(incomingMessageJson,
-        MessageToServer.class);
+        MessageToServer incomingMessage = gson.fromJson(incomingMessageJson, MessageToServer.class);
         if (incomingMessage != null) {
           message.content = incomingMessage.content;
         }
@@ -149,8 +145,7 @@ public class ChatSocket {
   public static class Configurator
   extends ServerEndpointConfig.Configurator {
     @Override
-    public void modifyHandshake(ServerEndpointConfig config,
-    HandshakeRequest request, HandshakeResponse response) {
+    public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
       super.modifyHandshake(config, request, response);
 
       try {
@@ -177,8 +172,7 @@ public class ChatSocket {
     }
 
     private void dropConnection(HandshakeResponse response) {
-      response.getHeaders()
-      .put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
+      response.getHeaders().put(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, new ArrayList<String>());
     }
   }
 

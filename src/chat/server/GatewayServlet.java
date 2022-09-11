@@ -7,11 +7,9 @@ import jakarta.servlet.http.*;
 import java.io.*;
 
 public class GatewayServlet extends HttpServlet {
-  private static final String[] implementedMethods = {"GET", "POST", "PUT",
-  "DELETE", "HEAD", "OPTIONS", "TRACE"};
+  private static final String[] implementedMethods = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE"};
 
-  protected void service(HttpServletRequest request,
-  HttpServletResponse response)
+  protected void service(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
     try {
       boolean methodImplemented = false;
@@ -43,8 +41,7 @@ public class GatewayServlet extends HttpServlet {
 
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    RequestHandler.handleRequest(request, response,
-    new GetRequestHandlerCallback());
+    RequestHandler.handleRequest(request, response, new GetRequestHandlerCallback());
   }
 
   private static class GetRequestHandlerCallback
@@ -52,11 +49,9 @@ public class GatewayServlet extends HttpServlet {
     private static final String redirectLocationAuthorized = "/chat";
     private static final String redirectLocationUnauthorized = "/login";
 
-    public RequestHandler.Callback.ResponseData call(
-    RequestHandler.Callback.RequestData requestData) {
+    public RequestHandler.Callback.ResponseData call(RequestHandler.Callback.RequestData requestData) {
       RequestHandler.Callback.ResponseData responseData = new ResponseData();
-      App.Result<Object> result = App.shared
-      .verifySessionToken(requestData.sessionToken);
+      App.Result<Object> result = App.shared.verifySessionToken(requestData.sessionToken);
       if (result.success) {
         responseData.statusCode = 302;
         responseData.location = redirectLocationAuthorized;

@@ -154,8 +154,7 @@ public class State {
 
   public boolean createUser(User user)
   throws Exception {
-    if (user == null || Utilities.nullOrEmpty(user.name)
-    || Utilities.nullOrEmpty(user.hash) || Utilities.nullOrEmpty(user.salt)) {
+    if (user == null || Utilities.nullOrEmpty(user.name) || Utilities.nullOrEmpty(user.hash) || Utilities.nullOrEmpty(user.salt)) {
       throw new IllegalArgumentException();
     }
 
@@ -168,8 +167,7 @@ public class State {
     try {
       String queryString = null;
       if (user.id > 0) {
-        queryString = "INSERT INTO users (id, name, hash, salt)"
-        + " VALUES (?, ?, ?, ?);";
+        queryString = "INSERT INTO users (id, name, hash, salt) VALUES (?, ?, ?, ?);";
         statement = connection.prepareStatement(queryString);
         statement.setInt(1, user.id);
         statement.setString(2, user.name);
@@ -210,8 +208,7 @@ public class State {
 
   public boolean updateUser(User user)
   throws Exception {
-    if (user == null || user.id < 1 || (Utilities.nullOrEmpty(user.name)
-    && Utilities.nullOrEmpty(user.hash) && Utilities.nullOrEmpty(user.salt))) {
+    if (user == null || user.id < 1 || (Utilities.nullOrEmpty(user.name) && Utilities.nullOrEmpty(user.hash) && Utilities.nullOrEmpty(user.salt))) {
       throw new IllegalArgumentException();
     }
 
@@ -324,8 +321,7 @@ public class State {
     ResultSet results = null;
 
     try {
-      String queryString = "SELECT userId, expiration FROM sessions"
-      + " WHERE id = ?;";
+      String queryString = "SELECT userId, expiration FROM sessions WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
       statement.setString(1, sessionId);
       results = statement.executeQuery();
@@ -351,8 +347,7 @@ public class State {
 
   public boolean createSession(Session session)
   throws Exception {
-    if (session == null || Utilities.nullOrEmpty(session.id)
-    || session.userId < 1 || session.expiration < 0) {
+    if (session == null || Utilities.nullOrEmpty(session.id) || session.userId < 1 || session.expiration < 0) {
       throw new IllegalArgumentException();
     }
 
@@ -363,8 +358,7 @@ public class State {
     PreparedStatement statement = null;
 
     try {
-      String queryString = "INSERT INTO sessions (id, userId, expiration)"
-      + " VALUES (?, ?, ?);";
+      String queryString = "INSERT INTO sessions (id, userId, expiration) VALUES (?, ?, ?);";
       statement = connection.prepareStatement(queryString);
       statement.setString(1, session.id);
       statement.setInt(2, session.userId);
@@ -481,8 +475,7 @@ public class State {
 
     try {
       ArrayList<Message> messages = new ArrayList<Message>();
-      String queryString = "SELECT id, userId, timestamp, content"
-      + " FROM messages;";
+      String queryString = "SELECT id, userId, timestamp, content FROM messages;";
       statement = connection.prepareStatement(queryString);
       results = statement.executeQuery();
       while (results.next()) {
@@ -511,8 +504,7 @@ public class State {
 
   public boolean createMessage(Message message)
   throws Exception {
-    if (message == null || message.userId < 1 || message.timestamp < 0
-    || Utilities.nullOrEmpty(message.content)) {
+    if (message == null || message.userId < 1 || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
       throw new IllegalArgumentException();
     }
 
@@ -524,8 +516,7 @@ public class State {
 
     try {
       if (message.id > 0) {
-        String queryString = "INSERT INTO messages"
-        + " (id, userId, timestamp, content) VALUES (?, ?, ?, ?);";
+        String queryString = "INSERT INTO messages (id, userId, timestamp, content) VALUES (?, ?, ?, ?);";
         statement = connection.prepareStatement(queryString);
         statement.setInt(1, message.id);
         statement.setInt(2, message.userId);
@@ -541,8 +532,7 @@ public class State {
         }
       }
 
-      String queryString = "INSERT INTO messages (userId, timestamp, content)"
-      + " VALUES (?, ?, ?);";
+      String queryString = "INSERT INTO messages (userId, timestamp, content) VALUES (?, ?, ?);";
       statement = connection.prepareStatement(queryString);
       statement.setInt(1, message.userId);
       statement.setLong(2, message.timestamp);

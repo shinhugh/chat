@@ -11,34 +11,28 @@ import java.io.*;
 public class APIUserServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    RequestHandler.handleRequest(request, response,
-    new GetRequestHandlerCallback());
+    RequestHandler.handleRequest(request, response, new GetRequestHandlerCallback());
   }
 
   public void doPost(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    RequestHandler.handleRequest(request, response,
-    new PostRequestHandlerCallback());
+    RequestHandler.handleRequest(request, response, new PostRequestHandlerCallback());
   }
 
   public void doPut(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    RequestHandler.handleRequest(request, response,
-    new PutRequestHandlerCallback());
+    RequestHandler.handleRequest(request, response, new PutRequestHandlerCallback());
   }
 
   public void doDelete(HttpServletRequest request, HttpServletResponse response)
   throws IOException, ServletException {
-    RequestHandler.handleRequest(request, response,
-    new DeleteRequestHandlerCallback());
+    RequestHandler.handleRequest(request, response, new DeleteRequestHandlerCallback());
   }
 
   private static class GetRequestHandlerCallback
   implements RequestHandler.Callback {
-    public RequestHandler.Callback.ResponseData call(
-    RequestHandler.Callback.RequestData requestData) {
-      RequestHandler.Callback.ResponseData responseData
-      = new RequestHandler.Callback.ResponseData();
+    public RequestHandler.Callback.ResponseData call(RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new RequestHandler.Callback.ResponseData();
       App.Result<User> result = App.shared.getUser(requestData.sessionToken);
       if (!result.success) {
         switch(result.failureReason) {
@@ -62,10 +56,8 @@ public class APIUserServlet extends HttpServlet {
 
   private static class PostRequestHandlerCallback
   implements RequestHandler.Callback {
-    public RequestHandler.Callback.ResponseData call(
-    RequestHandler.Callback.RequestData requestData) {
-      RequestHandler.Callback.ResponseData responseData
-      = new RequestHandler.Callback.ResponseData();
+    public RequestHandler.Callback.ResponseData call(RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new RequestHandler.Callback.ResponseData();
       Credentials credentials = null;
       if (!Utilities.nullOrEmpty(requestData.body)) {
         try {
@@ -93,10 +85,8 @@ public class APIUserServlet extends HttpServlet {
 
   private static class PutRequestHandlerCallback
   implements RequestHandler.Callback {
-    public RequestHandler.Callback.ResponseData call(
-    RequestHandler.Callback.RequestData requestData) {
-      RequestHandler.Callback.ResponseData responseData
-      = new RequestHandler.Callback.ResponseData();
+    public RequestHandler.Callback.ResponseData call(RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new RequestHandler.Callback.ResponseData();
       Credentials credentials = null;
       if (!Utilities.nullOrEmpty(requestData.body)) {
         try {
@@ -104,8 +94,7 @@ public class APIUserServlet extends HttpServlet {
           credentials = gson.fromJson(requestData.body, Credentials.class);
         } catch (JsonSyntaxException error) { }
       }
-      App.Result<Object> result = App.shared.updateUser(requestData
-      .sessionToken, credentials);
+      App.Result<Object> result = App.shared.updateUser(requestData.sessionToken, credentials);
       if (!result.success) {
         switch(result.failureReason) {
           case Unauthorized:
@@ -128,12 +117,9 @@ public class APIUserServlet extends HttpServlet {
 
   private static class DeleteRequestHandlerCallback
   implements RequestHandler.Callback {
-    public RequestHandler.Callback.ResponseData call(
-    RequestHandler.Callback.RequestData requestData) {
-      RequestHandler.Callback.ResponseData responseData
-      = new RequestHandler.Callback.ResponseData();
-      App.Result<Object> result = App.shared.deleteUser(requestData
-      .sessionToken);
+    public RequestHandler.Callback.ResponseData call(RequestHandler.Callback.RequestData requestData) {
+      RequestHandler.Callback.ResponseData responseData = new RequestHandler.Callback.ResponseData();
+      App.Result<Object> result = App.shared.deleteUser(requestData.sessionToken);
       if (!result.success) {
         switch(result.failureReason) {
           case Unauthorized:
