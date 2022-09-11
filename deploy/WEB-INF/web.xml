@@ -85,6 +85,11 @@
       <location>/public/500.html</location>
     </error-page>
 
+    <error-page>
+      <error-code>501</error-code>
+      <location>/public/501.txt</location>
+    </error-page>
+
     <session-config>
       <session-timeout>60</session-timeout>
     </session-config>
