@@ -59,13 +59,13 @@ class RequestHandler {
         response.setContentType(responseData.contentType);
       }
       if (!Utilities.nullOrEmpty(responseData.body)) {
-        PrintWriter out = response.getWriter();
-        out.print(responseData.body);
+        PrintWriter bodyWriter = response.getWriter();
+        bodyWriter.print(responseData.body);
       }
     }
 
     catch (Exception error) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      response.setStatus(500);
     }
   }
 

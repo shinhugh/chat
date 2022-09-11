@@ -1,10 +1,10 @@
 package chat.server;
 
 import chat.app.*;
+import chat.util.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.*;
-import java.nio.file.*;
 
 public class PageLoginServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -15,7 +15,8 @@ public class PageLoginServlet extends HttpServlet {
 
   private static class GetRequestHandlerCallback
   implements RequestHandler.Callback {
-    private static final String resourcePath = "/public/login/index.html";
+    private static final String resourcePath = "/login/index.html";
+    private static final String contentType = "text/html";
     private static final String redirectLocation = "/";
 
     public RequestHandler.Callback.ResponseData call(
@@ -33,27 +34,14 @@ public class PageLoginServlet extends HttpServlet {
         return responseData;
       }
       String body = null;
-      StringBuilder sb = new StringBuilder();
-      String path = System.getProperty("catalina.base") + "/webapps/ROOT"
-      + resourcePath;
       try {
-        BufferedReader fileReader = Files.newBufferedReader(Paths.get(path));
-        String line = fileReader.readLine();
-        while (line != null) {
-          sb.append(line);
-          sb.append('\n');
-          line = fileReader.readLine();
-        }
+        body = Utilities.readPublicFile(resourcePath);
       } catch (IOException error) {
         responseData.statusCode = 500;
         return responseData;
       }
-      if (sb.length() > 0) {
-        sb.deleteCharAt(sb.length() - 1);
-        body = sb.toString();
-      }
       responseData.statusCode = 200;
-      responseData.contentType = "text/html";
+      responseData.contentType = contentType;
       responseData.body = body;
       return responseData;
     }
