@@ -31,8 +31,10 @@ public class GatewayServlet extends HttpServlet {
       }
     }
 
-    catch (Exception error) {
-      response.sendError(500);
+    catch (Exception errorA) {
+      try {
+        response.sendError(500);
+      } catch (IOException errorB) { }
       return;
     }
 

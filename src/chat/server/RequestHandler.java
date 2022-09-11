@@ -31,11 +31,6 @@ class RequestHandler {
 
       Callback.ResponseData responseData = callback.call(requestData);
 
-      if (responseData.statusCode >= 400 && responseData.statusCode <= 599) {
-        response.sendError(responseData.statusCode);
-      } else {
-        response.setStatus(responseData.statusCode);
-      }
       if (responseData.cookies != null) {
         for (Callback.ResponseData.Cookie cookie : responseData.cookies) {
           String cookieString = null;
@@ -65,10 +60,18 @@ class RequestHandler {
       if (!Utilities.nullOrEmpty(responseData.body)) {
         response.getWriter().println(responseData.body);
       }
+      if (responseData.statusCode >= 400 && responseData.statusCode <= 599) {
+        response.sendError(responseData.statusCode);
+      } else {
+        response.setStatus(responseData.statusCode);
+        response.flushBuffer();
+      }
     }
 
-    catch (Exception error) {
-      response.sendError(500);
+    catch (Exception errorA) {
+      try {
+        response.sendError(500);
+      } catch (IOException errorB) { }
     }
   }
 
