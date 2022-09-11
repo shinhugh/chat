@@ -21,7 +21,7 @@ fi
 
 # Create archive
 rm -f $PATH_PROJ_ROOT/$WAR_NAME.war
-jar -cvf $PATH_PROJ_ROOT/$WAR_NAME.war $PATH_PREDEPLOY/*
+jar -cvf $PATH_PROJ_ROOT/$WAR_NAME.war -C $PATH_PREDEPLOY .
 
 # Clean up
 rm -rf $PATH_PREDEPLOY/WEB-INF/classes/*
