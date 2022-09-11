@@ -6,7 +6,7 @@
 
 const userApiUrl = '/api/user';
 const loginApiUrl = '/api/login';
-const messageSocketUrl = window.location.protocol == 'http:' ? 'ws://' + window.location.host + '/socket/message' : 'wss://' + window.location.host + '/socket/message';
+const messageSocketUrl = (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/socket/message';
 
 // --------------------------------------------------
 
