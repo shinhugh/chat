@@ -92,7 +92,7 @@
 
     <error-page>
       <error-code>500</error-code>
-      <location>/public/500.html</location>
+      <location>/public/500.txt</location>
     </error-page>
 
     <error-page>
