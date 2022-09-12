@@ -71,6 +71,7 @@ public class State {
    * boolean deleteSessionsByExpirationCutoff(long sessionExpirationCutoff)
    *
    * Message[] getMessages() +
+   * Message[] getMessagesUntilTimestamp(long timestamp, int count)
    * boolean createMessage(Message message) +
    */
 
@@ -475,7 +476,7 @@ public class State {
 
     try {
       ArrayList<Message> messages = new ArrayList<Message>();
-      String queryString = "SELECT id, userId, timestamp, content FROM messages;";
+      String queryString = "SELECT id, userId, timestamp, content FROM messages ORDER BY timestamp ASC;";
       statement = connection.prepareStatement(queryString);
       results = statement.executeQuery();
       while (results.next()) {
@@ -489,6 +490,50 @@ public class State {
       Message[] output = new Message[messages.size()];
       for (int i = 0; i < messages.size(); i++) {
         output[i] = messages.get(i);
+      }
+      return output;
+    }
+
+    catch (SQLException error) {
+      throw new Exception("Encountered unexpected behavior with database");
+    }
+    finally {
+      close(results);
+      close(statement);
+    }
+  }
+
+  public Message[] getMessagesUntilTimestamp(long timestamp, int limit)
+  throws Exception {
+    if (timestamp < 0 || limit < 0) {
+      throw new IllegalArgumentException();
+    }
+
+    if (!assureConnection()) {
+      throw new Exception("Cannot establish connection with database");
+    }
+
+    PreparedStatement statement = null;
+    ResultSet results = null;
+
+    try {
+      ArrayList<Message> messages = new ArrayList<Message>();
+      String queryString = "SELECT id, userId, timestamp, content FROM messages WHERE timestamp <= ? ORDER BY timestamp DESC LIMIT ?;";
+      statement = connection.prepareStatement(queryString);
+      statement.setLong(1, timestamp);
+      statement.setInt(2, limit);
+      results = statement.executeQuery();
+      while (results.next() && limit-- > 0) {
+        Message message = new Message();
+        message.id = results.getInt(1);
+        message.userId = results.getInt(2);
+        message.timestamp = results.getLong(3);
+        message.content = results.getString(4);
+        messages.add(message);
+      }
+      Message[] output = new Message[messages.size()];
+      for (int i = 0; i < messages.size(); i++) {
+        output[i] = messages.get(messages.size() - i - 1);
       }
       return output;
     }
