@@ -482,7 +482,7 @@ public class App {
     public T successValue;
     public FailureReason failureReason;
 
-    public enum FailureReason {
+    public static enum FailureReason {
       Unknown, IllegalArgument, Unauthorized, NotFound, Conflict
     }
   }
