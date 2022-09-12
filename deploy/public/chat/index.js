@@ -1,12 +1,15 @@
 // Required: /public/apiHttp.js
 
+// TODO: Implement ability to insert messages anywhere in history by timestamp
+// TODO: Implement message fetching on scroll-up / pull-down
+
 // --------------------------------------------------
 
 // Constants
 
 const userApiUrl = '/api/user';
 const loginApiUrl = '/api/login';
-const messageSocketUrl = (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/chat';
+const messageSocketUrl = (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages';
 
 // --------------------------------------------------
 
@@ -26,18 +29,24 @@ const overlayNotification = document.getElementById('p_overlay_notification');
 var messageSocket = null;
 if ('WebSocket' in window) {
   messageSocket = new WebSocket(messageSocketUrl);
-  messageSocket.onmessage = (data) => {
-    let obj = JSON.parse(data.data);
-    let chatEntry;
-    if (obj.outgoing) {
-      chatEntry = createOutgoingMessage(obj);
-    } else {
-      chatEntry = createIncomingMessage(obj);
+
+  messageSocket.onmessage = (messageToClientWrapper) => {
+    let messageToClient = JSON.parse(messageToClientWrapper.data);
+    if (messageToClient.messagesData && messageToClient.messagesData.messages) {
+      for (const message of messageToClient.messagesData.messages) {
+        addMessageToUI(message);
+      }
     }
-    chatHistorySection.append(chatEntry);
-    if (bottomScrolled) {
-      chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
-    }
+  };
+
+  messageSocket.onopen = () => {
+    let messageToServer = {
+      'fetchMessagesData': {
+        'timestamp': (new Date()).toISOString(),
+        'limit': 10
+      }
+    };
+    messageSocket.send(JSON.stringify(messageToServer));
   };
 
   messageSocket.onclose = () => {
@@ -63,10 +72,12 @@ chatComposerSubmit.onclick = () => {
     chatComposerSubmit.disabled = false;
     return;
   }
-  let messageObj = {
-    'content': messageContent
+  let messageToServer = {
+    'sendMessageData': {
+      'content': messageContent
+    }
   };
-  messageSocket.send(JSON.stringify(messageObj));
+  messageSocket.send(JSON.stringify(messageToServer));
   chatComposerContent.value = '';
   chatComposerSubmit.disabled = false;
 };
@@ -111,6 +122,19 @@ logoutSubmit.onclick = () => {
 // --------------------------------------------------
 
 // Create entry for message history UI
+
+function addMessageToUI(message) {
+  let chatEntry;
+  if (message.outgoing) {
+    chatEntry = createOutgoingMessage(message);
+  } else {
+    chatEntry = createIncomingMessage(message);
+  }
+  chatHistorySection.append(chatEntry);
+  if (bottomScrolled) {
+    chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
+  }
+}
 
 function createIncomingMessage(obj) {
   let container = document.createElement('div');

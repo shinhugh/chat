@@ -14,6 +14,7 @@ public class App {
   private static final long sessionDuration = 86400000;
 
   private final State state;
+  private Map<String, NewMessageCallback> newMessageCallbacks;
 
   /*
    * Possible FailureReason values:
@@ -448,7 +449,28 @@ public class App {
       result.success = state.createMessage(stateMessage);
       if (!result.success) {
         result.failureReason = Result.FailureReason.Unknown;
+        return result;
       }
+
+      for (Map.Entry<String, NewMessageCallback> entry : newMessageCallbacks.entrySet()) {
+        chat.state.structs.User recipientUser = null;
+        try {
+          recipientUser = getUserBySessionToken(entry.getKey());
+        } catch (Exception error) {
+          continue;
+        }
+        if (recipientUser == null) {
+          continue;
+        }
+        boolean sameUser = recipientUser.id == user.id;
+        chat.app.structs.Message tailoredMessage = new chat.app.structs.Message();
+        tailoredMessage.outgoing = sameUser;
+        tailoredMessage.userName = sameUser ? null : user.name;
+        tailoredMessage.timestamp = message.timestamp;
+        tailoredMessage.content = message.content;
+        entry.getValue().call(tailoredMessage);
+      }
+
       return result;
     }
 
@@ -459,8 +481,17 @@ public class App {
     }
   }
 
+  public void registerCallbackForNewMessage(String sessionToken, NewMessageCallback callback) {
+    newMessageCallbacks.put(sessionToken, callback);
+  }
+
+  public void unregisterCallbackForNewMessage(String sessionToken) {
+    newMessageCallbacks.remove(sessionToken);
+  }
+
   private App(State state) {
     this.state = state;
+    this.newMessageCallbacks = new HashMap<String, NewMessageCallback>();
   }
 
   private chat.state.structs.User getUserBySessionToken(String sessionToken)
@@ -485,5 +516,9 @@ public class App {
     public static enum FailureReason {
       Unknown, IllegalArgument, Unauthorized, NotFound, Conflict
     }
+  }
+
+  public static interface NewMessageCallback {
+    public void call(chat.app.structs.Message message);
   }
 }

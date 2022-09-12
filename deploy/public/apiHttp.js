@@ -54,7 +54,7 @@ const apiHttp = {
     }
   },
   'delete': async (url, queries) => {
-    url = apiUrl + '?';
+    url = url + '?';
     for (let key in queries) {
       url += key + '=' + queries[key] + '&';
     }
