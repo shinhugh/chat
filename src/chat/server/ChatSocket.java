@@ -107,10 +107,7 @@ implements App.NewMessageCallback {
       return;
     }
 
-    Instant currInstant = Instant.now();
-
     Message message = new Message();
-    message.timestamp = currInstant.toEpochMilli();
     message.content = sendMessageData.content;
 
     App.Result<Object> createMessageResult = App.shared.createMessage(sessionToken, message);

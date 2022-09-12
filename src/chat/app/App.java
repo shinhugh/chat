@@ -4,6 +4,7 @@ import chat.app.structs.*;
 import chat.state.*;
 import chat.state.structs.*;
 import chat.util.*;
+import java.time.*;
 import java.util.*;
 
 public class App {
@@ -437,10 +438,12 @@ public class App {
         return result;
       }
 
-      if (message == null || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
+      if (message == null || Utilities.nullOrEmpty(message.content)) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
+
+      message.timestamp = Instant.now().toEpochMilli();
 
       chat.state.structs.Message stateMessage = new chat.state.structs.Message();
       stateMessage.userId = user.id;
