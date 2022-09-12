@@ -311,61 +311,9 @@ public class App {
    * Possible FailureReason values:
    * - Unknown
    * - Unauthorized
-   */
-  public Result<chat.app.structs.Message[]> getMessages(String sessionToken) {
-    try {
-      Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
-
-      if (Utilities.nullOrEmpty(sessionToken)) {
-        result.failureReason = Result.FailureReason.Unauthorized;
-        return result;
-      }
-
-      chat.state.structs.User user = getUserBySessionToken(sessionToken);
-      if (user == null) {
-        result.failureReason = Result.FailureReason.Unauthorized;
-        return result;
-      }
-
-      HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
-      chat.state.structs.Message[] messages = state.getMessages();
-      chat.app.structs.Message[] appMessages = new chat.app.structs.Message[messages.length];
-      for (int i = 0; i < messages.length; i++) {
-        appMessages[i] = new chat.app.structs.Message();
-        appMessages[i].outgoing = messages[i].userId == user.id;
-        if (!appMessages[i].outgoing) {
-          if (!userNameCache.containsKey(messages[i].userId)) {
-            chat.state.structs.User messageUser = state.getUserById(messages[i].userId);
-            if (messageUser != null) {
-              userNameCache.put(messages[i].userId, messageUser.name);
-            } else {
-              userNameCache.put(messages[i].userId, "[Deleted user]");
-            }
-          }
-          appMessages[i].userName = userNameCache.get(messages[i].userId);
-        }
-        appMessages[i].timestamp = messages[i].timestamp;
-        appMessages[i].content = messages[i].content;
-      }
-      result.success = true;
-      result.successValue = appMessages;
-      return result;
-    }
-
-    catch (Exception error) {
-      Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
-      result.failureReason = Result.FailureReason.Unknown;
-      return result;
-    }
-  }
-
-  /*
-   * Possible FailureReason values:
-   * - Unknown
-   * - Unauthorized
    * - IllegalArgument
    */
-  public Result<chat.app.structs.Message[]> getMessagesUntilTimestamp(String sessionToken, long timestamp, int limit) {
+  public Result<chat.app.structs.Message[]> getMessagesUntilTimestamp(String sessionToken, long maxTimestamp, int limit) {
     try {
       Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
 
@@ -380,13 +328,13 @@ public class App {
         return result;
       }
 
-      if (timestamp < 0 || limit < 0) {
+      if (maxTimestamp < 0 || limit < 0) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
 
       HashMap<Integer, String> userNameCache = new HashMap<Integer, String>();
-      chat.state.structs.Message[] messages = state.getMessagesUntilTimestamp(timestamp, limit);
+      chat.state.structs.Message[] messages = state.getMessagesUntilTimestamp(maxTimestamp, limit);
       chat.app.structs.Message[] appMessages = new chat.app.structs.Message[messages.length];
       for (int i = 0; i < messages.length; i++) {
         appMessages[i] = new chat.app.structs.Message();
