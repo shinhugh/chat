@@ -1,6 +1,5 @@
 package chat.server;
 
-// TODO: Remove unnecessary imports
 import chat.app.*;
 import chat.app.structs.*;
 import chat.util.*;
@@ -77,17 +76,16 @@ implements App.NewMessageCallback {
       return;
     }
 
-    long timestamp = -1;
-    if (!Utilities.nullOrEmpty(fetchMessagesData.timestamp)) {
-      try {
-        timestamp = Instant.parse(fetchMessagesData.timestamp).toEpochMilli();
-      } catch (DateTimeParseException error) { }
+    App.Result<Message[]> result = null;
+    if (fetchMessagesData.messageId < 1) {
+      result = App.shared.getMessagesMostRecent(sessionToken, fetchMessagesData.limit);
+    } else {
+      result = App.shared.getMessagesBeforeMessage(sessionToken, fetchMessagesData.messageId, fetchMessagesData.limit);
     }
-
-    App.Result<Message[]> result = App.shared.getMessagesUntilTimestamp(sessionToken, timestamp, fetchMessagesData.limit);
     if (!result.success) {
       switch (result.failureReason) {
         case IllegalArgument:
+        case NotFound:
           return;
         default:
           close();
@@ -128,6 +126,7 @@ implements App.NewMessageCallback {
     messageToClient.messagesData.messages = new MessageToClient.MessagesData.Message[messages.length];
     for (int i = 0; i < messages.length; i++) {
       messageToClient.messagesData.messages[i] = new MessageToClient.MessagesData.Message();
+      messageToClient.messagesData.messages[i].id = messages[i].id;
       messageToClient.messagesData.messages[i].outgoing = messages[i].outgoing;
       messageToClient.messagesData.messages[i].userName = messages[i].userName;
       messageToClient.messagesData.messages[i].timestamp = Instant.ofEpochMilli(messages[i].timestamp).toString();
@@ -183,7 +182,7 @@ implements App.NewMessageCallback {
     public SendMessageData sendMessageData;
 
     public static class FetchMessagesData {
-      public String timestamp;
+      public int messageId;
       public int limit;
     }
 
@@ -199,6 +198,7 @@ implements App.NewMessageCallback {
       public Message[] messages;
 
       public static class Message {
+        public int id;
         public boolean outgoing;
         public String userName;
         public String timestamp;

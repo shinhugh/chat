@@ -1,7 +1,7 @@
 // Required: /public/apiHttp.js
 
-// TODO: Implement ability to insert messages anywhere in history by timestamp
-// TODO: Implement message fetching on scroll-up / pull-down
+// TODO: Chat history UI should reflect apiMessage state
+// TODO: Fetch past messages until scrollable
 
 // --------------------------------------------------
 
@@ -10,6 +10,7 @@
 const userApiUrl = '/api/user';
 const loginApiUrl = '/api/login';
 const messageSocketUrl = (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages';
+const messageBatchSize = 5;
 
 // --------------------------------------------------
 
@@ -34,19 +35,14 @@ if ('WebSocket' in window) {
     let messageToClient = JSON.parse(messageToClientWrapper.data);
     if (messageToClient.messagesData && messageToClient.messagesData.messages) {
       for (const message of messageToClient.messagesData.messages) {
-        addMessageToUI(message);
+        message.timestamp = new Date(message.timestamp);
+        apiMessage.addMessage(message);
       }
     }
   };
 
   messageSocket.onopen = () => {
-    let messageToServer = {
-      'fetchMessagesData': {
-        'timestamp': (new Date()).toISOString(),
-        'limit': 10
-      }
-    };
-    messageSocket.send(JSON.stringify(messageToServer));
+    fetchMostRecentMessages();
   };
 
   messageSocket.onclose = () => {
@@ -54,6 +50,25 @@ if ('WebSocket' in window) {
   };
 } else {
   showOverlayNotification('Unable to connect', 2000);
+}
+
+function fetchPastMessages() {
+  let messageToServer = {
+    'fetchMessagesData': {
+      'messageId': apiMessage.getOldestMessageId(),
+      'limit': messageBatchSize
+    }
+  };
+  messageSocket.send(JSON.stringify(messageToServer));
+}
+
+function fetchMostRecentMessages() {
+  let messageToServer = {
+    'fetchMessagesData': {
+      'limit': messageBatchSize
+    }
+  };
+  messageSocket.send(JSON.stringify(messageToServer));
 }
 
 // --------------------------------------------------
@@ -123,7 +138,20 @@ logoutSubmit.onclick = () => {
 
 // Create entry for message history UI
 
-function addMessageToUI(message) {
+function prependMessageUI(message) {
+  let chatEntry;
+  if (message.outgoing) {
+    chatEntry = createOutgoingMessage(message);
+  } else {
+    chatEntry = createIncomingMessage(message);
+  }
+  chatHistorySection.prepend(chatEntry);
+  if (bottomScrolled) {
+    chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
+  }
+}
+
+function appendMessageUI(message) {
   let chatEntry;
   if (message.outgoing) {
     chatEntry = createOutgoingMessage(message);
@@ -176,6 +204,9 @@ function createOutgoingMessage(obj) {
 var bottomScrolled = true;
 chatHistorySection.onscroll = () => {
   bottomScrolled = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
+  if (chatHistorySection.scrollTop == 0) {
+    fetchPastMessages();
+  }
 };
 
 const resizeObserver = new ResizeObserver(() => {

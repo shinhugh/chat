@@ -17,6 +17,7 @@ const apiHttp = {
       throw 'Response body was not in JSON format';
     }
   },
+
   'create': async (url, queries, obj) => {
     url = url + '?';
     for (let key in queries) {
@@ -35,6 +36,7 @@ const apiHttp = {
       throw 'Request unsuccessful';
     }
   },
+
   'update': async (url, queries, obj) => {
     url = url + '?';
     for (let key in queries) {
@@ -53,6 +55,7 @@ const apiHttp = {
       throw 'Request unsuccessful';
     }
   },
+
   'delete': async (url, queries) => {
     url = url + '?';
     for (let key in queries) {

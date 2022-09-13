@@ -464,6 +464,45 @@ public class State {
     }
   }
 
+  public Message getMessageById(int messageId)
+  throws Exception {
+    if (messageId < 1) {
+      throw new IllegalArgumentException();
+    }
+
+    if (!assureConnection()) {
+      throw new Exception("Cannot establish connection with database");
+    }
+
+    PreparedStatement statement = null;
+    ResultSet results = null;
+
+    try {
+      String queryString = "SELECT userId, timestamp, content FROM messages WHERE id = ?;";
+      statement = connection.prepareStatement(queryString);
+      statement.setInt(1, messageId);
+      results = statement.executeQuery();
+      if (!results.next()) {
+        return null;
+      }
+
+      Message message = new Message();
+      message.id = messageId;
+      message.userId = results.getInt(1);
+      message.timestamp = results.getLong(2);
+      message.content = results.getString(3);
+      return message;
+    }
+
+    catch (SQLException error) {
+      throw new Exception("Encountered unexpected behavior with database");
+    }
+    finally {
+      close(results);
+      close(statement);
+    }
+  }
+
   public Message[] getMessagesUntilTimestamp(long maxTimestamp, int limit)
   throws Exception {
     if (maxTimestamp < 0 || limit < 0) {
@@ -491,6 +530,9 @@ public class State {
         message.timestamp = results.getLong(3);
         message.content = results.getString(4);
         messages.add(message);
+      }
+      if (messages.size() == 0) {
+        return null;
       }
       Message[] output = new Message[messages.size()];
       for (int i = 0; i < messages.size(); i++) {
