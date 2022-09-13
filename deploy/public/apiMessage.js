@@ -17,9 +17,6 @@ var apiMessage = {
   },
 
   'addMessage': (message) => {
-    if (!apiUtilities.verifyFields(message, ['id', 'timestamp', 'content'])) {
-      return;
-    }
     if (!message.outgoing && !message.userName) {
       return;
     }
