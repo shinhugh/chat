@@ -74,9 +74,9 @@ public class State {
    * boolean createMessage(Message message) +
    */
 
-  public User getUserById(int userId)
+  public User getUserById(String userId)
   throws Exception {
-    if (userId < 1) {
+    if (Utilities.nullOrEmpty(userId)) {
       throw new IllegalArgumentException();
     }
 
@@ -90,7 +90,7 @@ public class State {
     try {
       String queryString = "SELECT name, hash, salt FROM users WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
-      statement.setInt(1, userId);
+      statement.setString(1, userId);
       results = statement.executeQuery();
       if (!results.next()) {
         return null;
@@ -136,7 +136,7 @@ public class State {
       }
 
       User user = new User();
-      user.id = results.getInt(1);
+      user.id = results.getString(1);
       user.name = userName;
       user.hash = results.getString(2);
       user.salt = results.getString(3);
@@ -154,7 +154,7 @@ public class State {
 
   public boolean createUser(User user)
   throws Exception {
-    if (user == null || Utilities.nullOrEmpty(user.name) || Utilities.nullOrEmpty(user.hash) || Utilities.nullOrEmpty(user.salt)) {
+    if (user == null || Utilities.nullOrEmpty(user.id) || Utilities.nullOrEmpty(user.name) || Utilities.nullOrEmpty(user.hash) || Utilities.nullOrEmpty(user.salt)) {
       throw new IllegalArgumentException();
     }
 
@@ -165,29 +165,12 @@ public class State {
     PreparedStatement statement = null;
 
     try {
-      String queryString = null;
-      if (user.id > 0) {
-        queryString = "INSERT INTO users (id, name, hash, salt) VALUES (?, ?, ?, ?);";
-        statement = connection.prepareStatement(queryString);
-        statement.setInt(1, user.id);
-        statement.setString(2, user.name);
-        statement.setString(3, user.hash);
-        statement.setString(4, user.salt);
-        try {
-          return statement.executeUpdate() == 1;
-        } catch (SQLException error) {
-          if (error.getErrorCode() == dbErrorCodeDuplicateKey) {
-            return false;
-          }
-          throw error;
-        }
-      }
-
-      queryString = "INSERT INTO users (name, hash, salt) VALUES (?, ?, ?);";
+      String queryString = "INSERT INTO users (id, name, hash, salt) VALUES (?, ?, ?, ?);";
       statement = connection.prepareStatement(queryString);
-      statement.setString(1, user.name);
-      statement.setString(2, user.hash);
-      statement.setString(3, user.salt);
+      statement.setString(1, user.id);
+      statement.setString(2, user.name);
+      statement.setString(3, user.hash);
+      statement.setString(4, user.salt);
       try {
         return statement.executeUpdate() == 1;
       } catch (SQLException error) {
@@ -208,7 +191,7 @@ public class State {
 
   public boolean updateUser(User user)
   throws Exception {
-    if (user == null || user.id < 1 || (Utilities.nullOrEmpty(user.name) && Utilities.nullOrEmpty(user.hash) && Utilities.nullOrEmpty(user.salt))) {
+    if (user == null || Utilities.nullOrEmpty(user.id) || (Utilities.nullOrEmpty(user.name) && Utilities.nullOrEmpty(user.hash) && Utilities.nullOrEmpty(user.salt))) {
       throw new IllegalArgumentException();
     }
 
@@ -225,7 +208,7 @@ public class State {
         String queryString = "UPDATE users SET name = ? WHERE id = ?;";
         statement = connection.prepareStatement(queryString);
         statement.setString(1, user.name);
-        statement.setInt(2, user.id);
+        statement.setString(2, user.id);
         try {
           if (statement.executeUpdate() != 1) {
             return false;
@@ -243,7 +226,7 @@ public class State {
         String queryString = "UPDATE users SET hash = ? WHERE id = ?;";
         statement = connection.prepareStatement(queryString);
         statement.setString(1, user.hash);
-        statement.setInt(2, user.id);
+        statement.setString(2, user.id);
         if (statement.executeUpdate() != 1) {
           connection.rollback();
           return false;
@@ -255,7 +238,7 @@ public class State {
         String queryString = "UPDATE users SET salt = ? WHERE id = ?;";
         statement = connection.prepareStatement(queryString);
         statement.setString(1, user.salt);
-        statement.setInt(2, user.id);
+        statement.setString(2, user.id);
         if (statement.executeUpdate() != 1) {
           connection.rollback();
           return false;
@@ -280,9 +263,9 @@ public class State {
     }
   }
 
-  public boolean deleteUserById(int userId)
+  public boolean deleteUserById(String userId)
   throws Exception {
-    if (userId < 1) {
+    if (Utilities.nullOrEmpty(userId)) {
       throw new IllegalArgumentException();
     }
 
@@ -295,7 +278,7 @@ public class State {
     try {
       String queryString = "DELETE FROM users WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
-      statement.setInt(1, userId);
+      statement.setString(1, userId);
       return statement.executeUpdate() == 1;
     }
 
@@ -331,7 +314,7 @@ public class State {
 
       Session session = new Session();
       session.id = sessionId;
-      session.userId = results.getInt(1);
+      session.userId = results.getString(1);
       session.expiration = results.getLong(2);
       return session;
     }
@@ -347,7 +330,7 @@ public class State {
 
   public boolean createSession(Session session)
   throws Exception {
-    if (session == null || Utilities.nullOrEmpty(session.id) || session.userId < 1 || session.expiration < 0) {
+    if (session == null || Utilities.nullOrEmpty(session.id) || Utilities.nullOrEmpty(session.userId) || session.expiration < 0) {
       throw new IllegalArgumentException();
     }
 
@@ -361,7 +344,7 @@ public class State {
       String queryString = "INSERT INTO sessions (id, userId, expiration) VALUES (?, ?, ?);";
       statement = connection.prepareStatement(queryString);
       statement.setString(1, session.id);
-      statement.setInt(2, session.userId);
+      statement.setString(2, session.userId);
       statement.setLong(3, session.expiration);
       try {
         return statement.executeUpdate() == 1;
@@ -408,9 +391,9 @@ public class State {
     }
   }
 
-  public boolean deleteSessionsByUserId(int userId)
+  public boolean deleteSessionsByUserId(String userId)
   throws Exception {
-    if (userId < 1) {
+    if (Utilities.nullOrEmpty(userId)) {
       throw new IllegalArgumentException();
     }
 
@@ -423,7 +406,7 @@ public class State {
     try {
       String queryString = "DELETE FROM sessions WHERE userId = ?;";
       statement = connection.prepareStatement(queryString);
-      statement.setInt(1, userId);
+      statement.setString(1, userId);
       statement.executeUpdate();
       return true;
     }
@@ -464,9 +447,9 @@ public class State {
     }
   }
 
-  public Message getMessageById(int messageId)
+  public Message getMessageById(String messageId)
   throws Exception {
-    if (messageId < 1) {
+    if (Utilities.nullOrEmpty(messageId)) {
       throw new IllegalArgumentException();
     }
 
@@ -480,7 +463,7 @@ public class State {
     try {
       String queryString = "SELECT userId, timestamp, content FROM messages WHERE id = ?;";
       statement = connection.prepareStatement(queryString);
-      statement.setInt(1, messageId);
+      statement.setString(1, messageId);
       results = statement.executeQuery();
       if (!results.next()) {
         return null;
@@ -488,7 +471,7 @@ public class State {
 
       Message message = new Message();
       message.id = messageId;
-      message.userId = results.getInt(1);
+      message.userId = results.getString(1);
       message.timestamp = results.getLong(2);
       message.content = results.getString(3);
       return message;
@@ -525,8 +508,8 @@ public class State {
       results = statement.executeQuery();
       while (results.next() && limit-- > 0) {
         Message message = new Message();
-        message.id = results.getInt(1);
-        message.userId = results.getInt(2);
+        message.id = results.getString(1);
+        message.userId = results.getString(2);
         message.timestamp = results.getLong(3);
         message.content = results.getString(4);
         messages.add(message);
@@ -552,7 +535,7 @@ public class State {
 
   public boolean createMessage(Message message)
   throws Exception {
-    if (message == null || message.userId < 1 || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
+    if (message == null || Utilities.nullOrEmpty(message.id) || Utilities.nullOrEmpty(message.userId) || message.timestamp < 0 || Utilities.nullOrEmpty(message.content)) {
       throw new IllegalArgumentException();
     }
 
@@ -563,29 +546,20 @@ public class State {
     PreparedStatement statement = null;
 
     try {
-      if (message.id > 0) {
-        String queryString = "INSERT INTO messages (id, userId, timestamp, content) VALUES (?, ?, ?, ?);";
-        statement = connection.prepareStatement(queryString);
-        statement.setInt(1, message.id);
-        statement.setInt(2, message.userId);
-        statement.setLong(3, message.timestamp);
-        statement.setString(4, message.content);
-        try {
-          return statement.executeUpdate() == 1;
-        } catch (SQLException error) {
-          if (error.getErrorCode() == dbErrorCodeDuplicateKey) {
-            return false;
-          }
-          throw error;
-        }
-      }
-
-      String queryString = "INSERT INTO messages (userId, timestamp, content) VALUES (?, ?, ?);";
+      String queryString = "INSERT INTO messages (id, userId, timestamp, content) VALUES (?, ?, ?, ?);";
       statement = connection.prepareStatement(queryString);
-      statement.setInt(1, message.userId);
-      statement.setLong(2, message.timestamp);
-      statement.setString(3, message.content);
-      return statement.executeUpdate() == 1;
+      statement.setString(1, message.id);
+      statement.setString(2, message.userId);
+      statement.setLong(3, message.timestamp);
+      statement.setString(4, message.content);
+      try {
+        return statement.executeUpdate() == 1;
+      } catch (SQLException error) {
+        if (error.getErrorCode() == dbErrorCodeDuplicateKey) {
+          return false;
+        }
+        throw error;
+      }
     }
 
     catch (SQLException error) {

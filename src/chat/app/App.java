@@ -45,10 +45,8 @@ public class App {
 
       chat.state.structs.Session session = new chat.state.structs.Session();
       session.id = Utilities.generateRandomString(32);
-      chat.state.structs.Session duplicateSession = state.getSessionById(session.id);
-      while (duplicateSession != null) {
+      while (state.getSessionById(session.id) != null) {
         session.id = Utilities.generateRandomString(32);
-        duplicateSession = state.getSessionById(session.id);
       }
       session.userId = user.id;
       session.expiration = System.currentTimeMillis() + sessionDuration;
@@ -153,6 +151,7 @@ public class App {
       }
 
       chat.app.structs.User appUser = new chat.app.structs.User();
+      appUser.id = user.id;
       appUser.name = user.name;
       result.success = true;
       result.successValue = appUser;
@@ -199,9 +198,15 @@ public class App {
         return result;
       }
 
+      String userId = Utilities.generateRandomString(16);
+      while (state.getUserById(userId) != null) {
+        userId = Utilities.generateRandomString(16);
+      }
+
       chat.state.structs.User user = new chat.state.structs.User();
+      user.id = userId;
       user.name = credentials.name;
-      user.salt = Utilities.generateRandomString((short) 16);
+      user.salt = Utilities.generateRandomString(16);
       user.hash = Utilities.generateHash(credentials.pw, user.salt);
       result.success = state.createUser(user);
       if (!result.success) {
@@ -244,7 +249,7 @@ public class App {
         return result;
       }
 
-      int userId = user.id;
+      String userId = user.id;
       user = new chat.state.structs.User();
       user.id = userId;
       if (!Utilities.nullOrEmpty(credentials.name)) {
@@ -255,7 +260,7 @@ public class App {
         user.name = credentials.name;
       }
       if (!Utilities.nullOrEmpty(credentials.pw)) {
-        user.salt = Utilities.generateRandomString((short) 16);
+        user.salt = Utilities.generateRandomString(16);
         user.hash = Utilities.generateHash(credentials.pw, user.salt);
       }
       result.success = state.updateUser(user);
@@ -340,12 +345,12 @@ public class App {
         return result;
       }
 
-      Map<Integer, String> userNameCache = new HashMap<Integer, String>();
+      Map<String, String> userNameCache = new HashMap<String, String>();
       chat.app.structs.Message[] appMessages = new chat.app.structs.Message[stateMessages.length];
       for (int i = 0; i < stateMessages.length; i++) {
         appMessages[i] = new chat.app.structs.Message();
         appMessages[i].id = stateMessages[i].id;
-        appMessages[i].outgoing = stateMessages[i].userId == user.id;
+        appMessages[i].outgoing = stateMessages[i].userId.equals(user.id);
         if (!appMessages[i].outgoing) {
           if (!userNameCache.containsKey(stateMessages[i].userId)) {
             chat.state.structs.User messageUser = state.getUserById(stateMessages[i].userId);
@@ -379,7 +384,7 @@ public class App {
    * - IllegalArgument
    * - NotFound
    */
-  public Result<chat.app.structs.Message[]> getMessagesBeforeMessage(String sessionToken, int messageId, int limit) {
+  public Result<chat.app.structs.Message[]> getMessagesBeforeMessage(String sessionToken, String messageId, int limit) {
     try {
       Result<chat.app.structs.Message[]> result = new Result<chat.app.structs.Message[]>();
 
@@ -394,7 +399,7 @@ public class App {
         return result;
       }
 
-      if (messageId < 1 || limit < 0) {
+      if (Utilities.nullOrEmpty(messageId) || limit < 0) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
@@ -413,7 +418,7 @@ public class App {
 
       int duplicateIndex = stateMessages.length - 1;
       for (; duplicateIndex >= 0; duplicateIndex--) {
-        if (stateMessages[duplicateIndex].id == targetMessage.id) {
+        if (stateMessages[duplicateIndex].id.equals(targetMessage.id)) {
           break;
         }
       }
@@ -426,12 +431,12 @@ public class App {
       }
       stateMessages = scratch;
 
-      Map<Integer, String> userNameCache = new HashMap<Integer, String>();
+      Map<String, String> userNameCache = new HashMap<String, String>();
       chat.app.structs.Message[] appMessages = new chat.app.structs.Message[stateMessages.length];
       for (int i = 0; i < stateMessages.length; i++) {
         appMessages[i] = new chat.app.structs.Message();
         appMessages[i].id = stateMessages[i].id;
-        appMessages[i].outgoing = stateMessages[i].userId == user.id;
+        appMessages[i].outgoing = stateMessages[i].userId.equals(user.id);
         if (!appMessages[i].outgoing) {
           if (!userNameCache.containsKey(stateMessages[i].userId)) {
             chat.state.structs.User messageUser = state.getUserById(stateMessages[i].userId);
@@ -484,9 +489,15 @@ public class App {
         return result;
       }
 
+      message.id = Utilities.generateRandomString(16);
+      while (state.getMessageById(message.id) != null) {
+        message.id = Utilities.generateRandomString(16);
+      }
+
       message.timestamp = Instant.now().toEpochMilli();
 
       chat.state.structs.Message stateMessage = new chat.state.structs.Message();
+      stateMessage.id = message.id;
       stateMessage.userId = user.id;
       stateMessage.timestamp = message.timestamp;
       stateMessage.content = message.content;
@@ -506,9 +517,9 @@ public class App {
         if (recipientUser == null) {
           continue;
         }
-        boolean sameUser = recipientUser.id == user.id;
+        boolean sameUser = recipientUser.id.equals(user.id);
         chat.app.structs.Message tailoredMessage = new chat.app.structs.Message();
-        tailoredMessage.id = -1; // TODO: Generate String ID and pass into State method
+        tailoredMessage.id = message.id;
         tailoredMessage.outgoing = sameUser;
         tailoredMessage.userName = sameUser ? null : user.name;
         tailoredMessage.timestamp = message.timestamp;

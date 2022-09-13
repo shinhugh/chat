@@ -77,7 +77,7 @@ implements App.NewMessageCallback {
     }
 
     App.Result<Message[]> result = null;
-    if (fetchMessagesData.messageId < 1) {
+    if (Utilities.nullOrEmpty(fetchMessagesData.messageId)) {
       result = App.shared.getMessagesMostRecent(sessionToken, fetchMessagesData.limit);
     } else {
       result = App.shared.getMessagesBeforeMessage(sessionToken, fetchMessagesData.messageId, fetchMessagesData.limit);
@@ -182,7 +182,7 @@ implements App.NewMessageCallback {
     public SendMessageData sendMessageData;
 
     public static class FetchMessagesData {
-      public int messageId;
+      public String messageId;
       public int limit;
     }
 
@@ -198,7 +198,7 @@ implements App.NewMessageCallback {
       public Message[] messages;
 
       public static class Message {
-        public int id;
+        public String id;
         public boolean outgoing;
         public String userName;
         public String timestamp;
