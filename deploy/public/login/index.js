@@ -143,7 +143,7 @@ signupUserPw.addEventListener('keypress', (event) => {
 
 var notificationTimeout;
 
-function showOverlayNotification(message, timeout) {
+const showOverlayNotification = (message, timeout) => {
   clearTimeout(notificationTimeout);
   overlayNotification.innerHTML = message;
   overlayNotification.hidden = false;
@@ -151,4 +151,4 @@ function showOverlayNotification(message, timeout) {
     overlayNotification.hidden = true;
     overlayNotification.innerHTML = '';
   }, timeout);
-}
+};

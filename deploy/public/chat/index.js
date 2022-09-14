@@ -1,7 +1,7 @@
 // Required: /public/apiHttp.js
 
-// TODO: Chat history UI should reflect apiMessage state
 // TODO: Fetch past messages until scrollable
+// TODO: Maintain scroll location upon loading past messages
 
 // ==================================================
 
@@ -18,6 +18,22 @@ const messageBatchSize = 5;
 
 // --------------------------------------------------
 
+// Error events
+
+var errorCallbacks = [];
+
+const registerErrorCallback = (callback) => {
+  errorCallbacks.push(callback);
+};
+
+const handleError = (error) => {
+  for (const callback of errorCallbacks) {
+    callback(error);
+  }
+};
+
+// --------------------------------------------------
+
 // Establish websocket
 
 var messageSocket;
@@ -28,9 +44,9 @@ if ('WebSocket' in window) {
   messageSocket.onmessage = (messageToClientWrapper) => {
     let messageToClient = JSON.parse(messageToClientWrapper.data);
     if (messageToClient.messagesData && messageToClient.messagesData.messages) {
-      for (const message of messageToClient.messagesData.messages) {
-        message.timestamp = new Date(message.timestamp);
-        apiMessage.addMessage(message);
+      for (let i = messageToClient.messagesData.messages.length - 1; i >= 0 ; i--) {
+        messageToClient.messagesData.messages[i].timestamp = new Date(messageToClient.messagesData.messages[i].timestamp);
+        apiMessage.addMessage(messageToClient.messagesData.messages[i]);
       }
     }
   };
@@ -40,12 +56,12 @@ if ('WebSocket' in window) {
   };
 
   messageSocket.onclose = () => {
-    showOverlayNotification('Unable to connect', 2000);
+    handleError('Unable to connect');
   };
 }
 
 else {
-  showOverlayNotification('Unable to connect', 2000);
+  handleError('Unable to connect');
 }
 
 // --------------------------------------------------
@@ -53,8 +69,9 @@ else {
 // Send requests to server
 
 const requestPastMessages = () => {
-  if (!messageSocket) {
-    return;
+  if (!messageSocket || messageSocket.readyState != 1) {
+    handleError('Unable to fetch messages');
+    return false;
   }
   let messageToServer = {
     'fetchMessagesData': {
@@ -63,11 +80,13 @@ const requestPastMessages = () => {
     }
   };
   messageSocket.send(JSON.stringify(messageToServer));
+  return true;
 };
 
 const requestMostRecentMessages = () => {
-  if (!messageSocket) {
-    return;
+  if (!messageSocket || messageSocket.readyState != 1) {
+    handleError('Unable to fetch messages');
+    return false;
   }
   let messageToServer = {
     'fetchMessagesData': {
@@ -75,15 +94,21 @@ const requestMostRecentMessages = () => {
     }
   };
   messageSocket.send(JSON.stringify(messageToServer));
+  return true;
 };
 
 const sendMessage = (messageContent) => {
+  if (!messageSocket || messageSocket.readyState != 1) {
+    handleError('Unable to send message');
+    return false;
+  }
   let messageToServer = {
     'sendMessageData': {
       'content': messageContent
     }
   };
   messageSocket.send(JSON.stringify(messageToServer));
+  return true;
 };
 
 // --------------------------------------------------
@@ -104,13 +129,25 @@ const logOut = () => {
 
 // Fetch user name
 
+var userNameCallbacks = [];
+
+const registerUserNameCallback = (callback) => {
+  userNameCallbacks.push(callback);
+};
+
+const handleUserName = (userName) => {
+  for (const callback of userNameCallbacks) {
+    callback(userName);
+  }
+};
+
 apiHttp.read(userApiUrl, null)
 .then((user) => {
-  setUserNameText(user.name);
+  handleUserName(user.name);
 })
 .catch(() => {
-  showOverlayNotification('Unable to fetch user name', 2000);
-  setUserNameText('');
+  handleError('Unable to fetch user name');
+  handleUserName('');
 });
 
 // ==================================================
@@ -144,6 +181,9 @@ const showOverlayNotification = (message, timeout) => {
   }, timeout);
 };
 
+registerErrorCallback((description) => {
+  showOverlayNotification(description, 2000);
+});
 
 // --------------------------------------------------
 
@@ -156,12 +196,10 @@ chatComposerSubmit.onclick = () => {
     chatComposerSubmit.disabled = false;
     return;
   }
-  if (!messageSocket || messageSocket.readyState != 1) {
-    showOverlayNotification('Unable to send message', 2000);
+  if (!sendMessage(messageContent)) {
     chatComposerSubmit.disabled = false;
     return;
   }
-  sendMessage(messageContent);
   chatComposerContent.value = '';
   chatComposerSubmit.disabled = false;
 };
@@ -179,9 +217,9 @@ chatComposerContent.focus();
 
 // Set user name text
 
-const setUserNameText = (userName) => {
+registerUserNameCallback((userName) => {
   userName.innerHTML = userName;
-};
+});
 
 // --------------------------------------------------
 
@@ -195,17 +233,6 @@ logoutSubmit.onclick = () => {
 // --------------------------------------------------
 
 // Create entry for message history UI
-
-const addMessageView = (message) => {
-  let chatEntry;
-  if (message.outgoing) {
-    chatEntry = createOutgoingMessageView(message);
-  } else {
-    chatEntry = createIncomingMessageView(message);
-  }
-  chatHistorySection.append(chatEntry); // TODO
-  scrollIfLocked();
-};
 
 const createIncomingMessageView = (message) => {
   let container = document.createElement('div');
@@ -239,6 +266,17 @@ const createOutgoingMessageView = (message) => {
   container.lastChild.innerHTML = message.content;
   return container;
 };
+
+apiMessage.registerNewMessageCallback((index, message) => {
+  let chatEntry;
+  if (message.outgoing) {
+    chatEntry = createOutgoingMessageView(message);
+  } else {
+    chatEntry = createIncomingMessageView(message);
+  }
+  chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
+  scrollIfLocked();
+});
 
 // --------------------------------------------------
 
