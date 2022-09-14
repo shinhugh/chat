@@ -135,7 +135,6 @@ var apiMessage = {
         lastAddedNode = newMessageNode;
         lastAddedNodeIndex = index;
       }
-      console.log(newMessageIndexPairs); // DEBUG
       apiMessage.private.invokeNewMessageIndexPairsCallbacks(newMessageIndexPairs);
     },
 
