@@ -159,7 +159,7 @@ var scrollBottomLocked = true;
 chatHistorySection.onscroll = () => {
   scrollBottomLocked = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
   if (chatHistorySection.scrollTop == 0) {
-    apiMessage.requestPastMessages();
+    apiMessage.requestPastMessages(5);
   }
 };
 
@@ -183,4 +183,4 @@ const scrollIfLocked = () => {
 
 // Initialize message API
 
-apiMessage.initialize();
+apiMessage.initialize(10);

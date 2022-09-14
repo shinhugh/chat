@@ -1,13 +1,15 @@
 var apiMessage = {
   'private': {
-    'socketUrl': (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages',
-    'batchSize': 5,
-    'socket': null,
-    'count': 0,
-    'latestMessageNode': null,
-    'oldestMessageNode': null,
     'errorDescriptionCallbacks': [],
     'newMessageCallbacks': [],
+    'socket': null,
+    'socketUrl': (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages',
+    'socketCloseCount': 0,
+    'maxSocketCloseCount': 3,
+    'messageCount': 0,
+    'latestMessageNode': null,
+    'oldestMessageNode': null,
+    'messageIds': new Map(),
 
     'invokeErrorDescriptionCallbacks': (errorDescription) => {
       for (const callback of apiMessage.private.errorDescriptionCallbacks) {
@@ -21,12 +23,49 @@ var apiMessage = {
       }
     },
 
+    'establishSocket': (batchSizeLimit) => {
+      if ('WebSocket' in window) {
+        apiMessage.private.socket = new WebSocket(apiMessage.private.socketUrl);
+
+        apiMessage.private.socket.onmessage = (messageToClientWrapper) => {
+          let messageToClient = JSON.parse(messageToClientWrapper.data);
+          if (messageToClient.messagesData && messageToClient.messagesData.messages) {
+            for (let i = messageToClient.messagesData.messages.length - 1; i >= 0 ; i--) {
+              let message = messageToClient.messagesData.messages[i];
+              message.timestamp = new Date(message.timestamp);
+              apiMessage.private.addMessage(message);
+            }
+          }
+        };
+
+        apiMessage.private.socket.onopen = () => {
+          apiMessage.private.requestMostRecentMessages(batchSizeLimit);
+        };
+
+        apiMessage.private.socket.onclose = () => {
+          apiMessage.private.socketCloseCount++;
+          if (apiMessage.private.socketCloseCount == apiMessage.private.maxSocketCloseCount) {
+            apiMessage.private.invokeErrorDescriptionCallbacks('Unable to connect');
+          } else {
+            apiMessage.private.establishSocket(batchSizeLimit);
+          }
+        };
+      }
+
+      else {
+        apiMessage.private.invokeErrorDescriptionCallbacks('Unable to connect');
+      }
+    },
+
     'addMessage': (message) => {
       let newMessageNode = {
         'message': message,
         'previous': null,
         'next': null
       };
+      if (apiMessage.private.messageIds.has(newMessageNode.message.id)) {
+        return;
+      }
       let index = 0;
       if (apiMessage.private.oldestMessageNode == null) {
         apiMessage.private.oldestMessageNode = newMessageNode;
@@ -36,7 +75,7 @@ var apiMessage = {
         newMessageNode.previous = apiMessage.private.latestMessageNode;
         apiMessage.private.latestMessageNode.next = newMessageNode;
         apiMessage.private.latestMessageNode = newMessageNode;
-        index = apiMessage.private.count;
+        index = apiMessage.private.messageCount;
       }
       else if (newMessageNode.message.timestamp < apiMessage.private.oldestMessageNode.message.timestamp) {
         newMessageNode.next = apiMessage.private.oldestMessageNode;
@@ -45,7 +84,7 @@ var apiMessage = {
       }
       else {
         let currMessageNode = apiMessage.private.latestMessageNode;
-        index = apiMessage.private.count - 1;
+        index = apiMessage.private.messageCount - 1;
         while (newMessageNode.message.timestamp < currMessageNode.message.timestamp) {
           currMessageNode = currMessageNode.previous;
           index--;
@@ -55,18 +94,19 @@ var apiMessage = {
         newMessageNode.previous.next = newMessageNode;
         currMessageNode.previous = newMessageNode;
       }
-      apiMessage.private.count++;
+      apiMessage.private.messageIds.set(newMessageNode.message.id, true);
+      apiMessage.private.messageCount++;
       apiMessage.private.invokeNewMessageCallbacks(newMessageNode.message, index);
     },
 
-    'requestMostRecentMessages': () => {
+    'requestMostRecentMessages': (limit) => {
       if (!apiMessage.private.socket || apiMessage.private.socket.readyState != 1) {
         apiMessage.private.invokeErrorDescriptionCallbacks('Unable to fetch messages');
         return false;
       }
       let messageToServer = {
         'fetchMessagesData': {
-          'limit': apiMessage.private.batchSize
+          'limit': limit
         }
       };
       apiMessage.private.socket.send(JSON.stringify(messageToServer));
@@ -74,33 +114,8 @@ var apiMessage = {
     }
   },
 
-  'initialize': () => {
-    if ('WebSocket' in window) {
-      apiMessage.private.socket = new WebSocket(apiMessage.private.socketUrl);
-
-      apiMessage.private.socket.onmessage = (messageToClientWrapper) => {
-        let messageToClient = JSON.parse(messageToClientWrapper.data);
-        if (messageToClient.messagesData && messageToClient.messagesData.messages) {
-          for (let i = messageToClient.messagesData.messages.length - 1; i >= 0 ; i--) {
-            let message = messageToClient.messagesData.messages[i];
-            message.timestamp = new Date(message.timestamp);
-            apiMessage.private.addMessage(message);
-          }
-        }
-      };
-
-      apiMessage.private.socket.onopen = () => {
-        apiMessage.private.requestMostRecentMessages();
-      };
-
-      apiMessage.private.socket.onclose = () => {
-        apiMessage.private.invokeErrorDescriptionCallbacks('Unable to connect');
-      };
-    }
-
-    else {
-      apiMessage.private.invokeErrorDescriptionCallbacks('Unable to connect');
-    }
+  'initialize': (batchSizeLimit) => {
+    apiMessage.private.establishSocket(batchSizeLimit);
   },
 
   'registerErrorDescriptionCallback': (callback) => {
@@ -121,7 +136,7 @@ var apiMessage = {
     return messageArray;
   },
 
-  'requestPastMessages': () => {
+  'requestPastMessages': (limit) => {
     if (!apiMessage.private.socket || apiMessage.private.socket.readyState != 1) {
       apiMessage.private.invokeErrorDescriptionCallbacks('Unable to fetch messages');
       return false;
@@ -129,7 +144,7 @@ var apiMessage = {
     let messageToServer = {
       'fetchMessagesData': {
         'messageId': apiMessage.private.oldestMessageNode ? apiMessage.private.oldestMessageNode.message.id : null,
-        'limit': apiMessage.private.batchSize
+        'limit': limit
       }
     };
     apiMessage.private.socket.send(JSON.stringify(messageToServer));
