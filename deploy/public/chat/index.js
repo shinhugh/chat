@@ -10,6 +10,7 @@
 
 const userApiUrl = '/api/user';
 const loginApiUrl = '/api/login';
+const batchSizeLimit = 15;
 
 // --------------------------------------------------
 
@@ -100,7 +101,7 @@ chatComposerContent.focus();
 
 // --------------------------------------------------
 
-// Create entry for message history UI
+// Add new messages to UI
 
 const createIncomingMessageView = (message) => {
   let container = document.createElement('div');
@@ -136,6 +137,7 @@ const createOutgoingMessageView = (message) => {
 };
 
 apiMessage.registerNewMessageCallback((message, index) => {
+  let oldHeight = chatHistorySection.scrollHeight;
   let chatEntry;
   if (message.outgoing) {
     chatEntry = createOutgoingMessageView(message);
@@ -147,19 +149,24 @@ apiMessage.registerNewMessageCallback((message, index) => {
   } else {
     chatHistorySection.append(chatEntry);
   }
-  scrollIfLocked();
+  let scrollDistance = chatHistorySection.scrollHeight - oldHeight;
+  if (scrollBottomLocked) {
+    chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
+  } else {
+    chatHistorySection.scrollTop += scrollDistance;
+  }
 });
 
 // --------------------------------------------------
 
-// Keep chat history section scrolled to the bottom
+// Manage chat history scrolling
 
 var scrollBottomLocked = true;
 
 chatHistorySection.onscroll = () => {
   scrollBottomLocked = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
   if (chatHistorySection.scrollTop == 0) {
-    apiMessage.requestPastMessages(5);
+    apiMessage.requestPastMessages(batchSizeLimit);
   }
 };
 
@@ -173,14 +180,8 @@ const resizeObserver = new ResizeObserver(() => {
 });
 resizeObserver.observe(chatHistorySection);
 
-const scrollIfLocked = () => {
-  if (scrollBottomLocked) {
-    chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
-  }
-};
-
 // --------------------------------------------------
 
 // Initialize message API
 
-apiMessage.initialize(10);
+apiMessage.initialize(batchSizeLimit);
