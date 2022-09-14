@@ -1,7 +1,7 @@
 var apiMessage = {
   'private': {
     'errorDescriptionCallbacks': [],
-    'newMessageCallbacks': [],
+    'newMessageIndexPairsCallbacks': [],
     'socket': null,
     'socketUrl': (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages',
     'socketCloseCount': 0,
@@ -17,9 +17,9 @@ var apiMessage = {
       }
     },
 
-    'invokeNewMessageCallbacks': (newMessage, index) => {
-      for (const callback of apiMessage.private.newMessageCallbacks) {
-        callback(newMessage, index);
+    'invokeNewMessageIndexPairsCallbacks': (newMessageIndexPairs) => {
+      for (const callback of apiMessage.private.newMessageIndexPairsCallbacks) {
+        callback(newMessageIndexPairs);
       }
     },
 
@@ -30,11 +30,10 @@ var apiMessage = {
         apiMessage.private.socket.onmessage = (messageToClientWrapper) => {
           let messageToClient = JSON.parse(messageToClientWrapper.data);
           if (messageToClient.messagesData && messageToClient.messagesData.messages) {
-            for (let i = messageToClient.messagesData.messages.length - 1; i >= 0 ; i--) {
-              let message = messageToClient.messagesData.messages[i];
+            for (const message of messageToClient.messagesData.messages) {
               message.timestamp = new Date(message.timestamp);
-              apiMessage.private.addMessage(message);
             }
+            apiMessage.private.addMessages(messageToClient.messagesData.messages);
           }
         };
 
@@ -57,46 +56,87 @@ var apiMessage = {
       }
     },
 
-    'addMessage': (message) => {
-      let newMessageNode = {
-        'message': message,
-        'previous': null,
-        'next': null
-      };
-      if (apiMessage.private.messageIds.has(newMessageNode.message.id)) {
-        return;
-      }
-      let index = 0;
-      if (apiMessage.private.oldestMessageNode == null) {
-        apiMessage.private.oldestMessageNode = newMessageNode;
-        apiMessage.private.latestMessageNode = newMessageNode;
-      }
-      else if (newMessageNode.message.timestamp >= apiMessage.private.latestMessageNode.message.timestamp) {
-        newMessageNode.previous = apiMessage.private.latestMessageNode;
-        apiMessage.private.latestMessageNode.next = newMessageNode;
-        apiMessage.private.latestMessageNode = newMessageNode;
-        index = apiMessage.private.messageCount;
-      }
-      else if (newMessageNode.message.timestamp < apiMessage.private.oldestMessageNode.message.timestamp) {
-        newMessageNode.next = apiMessage.private.oldestMessageNode;
-        apiMessage.private.oldestMessageNode.previous = newMessageNode;
-        apiMessage.private.oldestMessageNode = newMessageNode;
-      }
-      else {
-        let currMessageNode = apiMessage.private.latestMessageNode;
-        index = apiMessage.private.messageCount - 1;
-        while (newMessageNode.message.timestamp < currMessageNode.message.timestamp) {
-          currMessageNode = currMessageNode.previous;
-          index--;
+    'addMessages': (messages) => {
+      messages.sort((messageA, messageB) => {
+        if (messageA.timestamp < messageB.timestamp) {
+          return -1;
+        } else if (messageA.timestamp > messageB.timestamp) {
+          return 1;
+        } else {
+          return 0;
         }
-        newMessageNode.previous = currMessageNode.previous;
-        newMessageNode.next = currMessageNode;
-        newMessageNode.previous.next = newMessageNode;
-        currMessageNode.previous = newMessageNode;
+      });
+      let newMessageIndexPairs = [];
+      let lastAddedNode = null;
+      let lastAddedNodeIndex = 0;
+      for (const message of messages) {
+        let newMessageNode = {
+          'message': message,
+          'previous': null,
+          'next': null
+        };
+        if (apiMessage.private.messageIds.has(newMessageNode.message.id)) {
+          continue;
+        }
+        let index = 0;
+        if (lastAddedNode) {
+          let currMessageNode = lastAddedNode.next;
+          index = lastAddedNodeIndex + 1;
+          while (currMessageNode && newMessageNode.message.timestamp >= currMessageNode.message.timestamp) {
+            currMessageNode = currMessageNode.next;
+            index++;
+          }
+          if (!currMessageNode) {
+            newMessageNode.previous = apiMessage.private.latestMessageNode;
+            newMessageNode.previous.next = newMessageNode;
+            apiMessage.private.latestMessageNode = newMessageNode;
+          } else {
+            newMessageNode.previous = currMessageNode.previous;
+            newMessageNode.next = currMessageNode;
+            newMessageNode.previous.next = newMessageNode;
+            currMessageNode.previous = newMessageNode;
+          }
+        }
+        else {
+          if (apiMessage.private.oldestMessageNode == null) {
+            apiMessage.private.oldestMessageNode = newMessageNode;
+            apiMessage.private.latestMessageNode = newMessageNode;
+          }
+          else if (newMessageNode.message.timestamp >= apiMessage.private.latestMessageNode.message.timestamp) {
+            newMessageNode.previous = apiMessage.private.latestMessageNode;
+            apiMessage.private.latestMessageNode.next = newMessageNode;
+            apiMessage.private.latestMessageNode = newMessageNode;
+            index = apiMessage.private.messageCount;
+          }
+          else if (newMessageNode.message.timestamp < apiMessage.private.oldestMessageNode.message.timestamp) {
+            newMessageNode.next = apiMessage.private.oldestMessageNode;
+            apiMessage.private.oldestMessageNode.previous = newMessageNode;
+            apiMessage.private.oldestMessageNode = newMessageNode;
+          }
+          else {
+            let currMessageNode = apiMessage.private.latestMessageNode;
+            index = apiMessage.private.messageCount;
+            while (newMessageNode.message.timestamp < currMessageNode.message.timestamp) {
+              currMessageNode = currMessageNode.previous;
+              index--;
+            }
+            newMessageNode.previous = currMessageNode;
+            newMessageNode.next = currMessageNode.next;
+            currMessageNode.next = newMessageNode;
+            newMessageNode.next.previous = newMessageNode;
+          }
+        }
+        apiMessage.private.messageIds.set(newMessageNode.message.id, true);
+        apiMessage.private.messageCount++;
+        newMessageIndexPairs.push({
+          'message': newMessageNode.message,
+          'index': index
+        });
+        lastAddedNode = newMessageNode;
+        lastAddedNodeIndex = index;
       }
-      apiMessage.private.messageIds.set(newMessageNode.message.id, true);
-      apiMessage.private.messageCount++;
-      apiMessage.private.invokeNewMessageCallbacks(newMessageNode.message, index);
+      console.log(newMessageIndexPairs); // DEBUG
+      apiMessage.private.invokeNewMessageIndexPairsCallbacks(newMessageIndexPairs);
     },
 
     'requestMostRecentMessages': (limit) => {
@@ -122,8 +162,8 @@ var apiMessage = {
     apiMessage.private.errorDescriptionCallbacks.push(callback);
   },
 
-  'registerNewMessageCallback': (callback) => {
-    apiMessage.private.newMessageCallbacks.push(callback);
+  'registerNewMessageIndexPairsCallback': (callback) => {
+    apiMessage.private.newMessageIndexPairsCallbacks.push(callback);
   },
 
   'getMessages': () => {

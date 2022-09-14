@@ -2,7 +2,6 @@
 // Required: /public/apiMessage.js
 
 // TODO: Fetch past messages until scrollable
-// TODO: Maintain scroll location upon loading past messages
 
 // --------------------------------------------------
 
@@ -136,18 +135,20 @@ const createOutgoingMessageView = (message) => {
   return container;
 };
 
-apiMessage.registerNewMessageCallback((message, index) => {
+apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
   let oldHeight = chatHistorySection.scrollHeight;
-  let chatEntry;
-  if (message.outgoing) {
-    chatEntry = createOutgoingMessageView(message);
-  } else {
-    chatEntry = createIncomingMessageView(message);
-  }
-  if (index < chatHistorySection.children.length) {
-    chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
-  } else {
-    chatHistorySection.append(chatEntry);
+  for (const newMessageIndexPair of newMessageIndexPairs) {
+    let chatEntry;
+    if (newMessageIndexPair.message.outgoing) {
+      chatEntry = createOutgoingMessageView(newMessageIndexPair.message);
+    } else {
+      chatEntry = createIncomingMessageView(newMessageIndexPair.message);
+    }
+    if (newMessageIndexPair.index < chatHistorySection.children.length) {
+      chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[newMessageIndexPair.index]);
+    } else {
+      chatHistorySection.append(chatEntry);
+    }
   }
   let scrollDistance = chatHistorySection.scrollHeight - oldHeight;
   if (scrollBottomLocked) {
