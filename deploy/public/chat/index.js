@@ -1,11 +1,8 @@
 // Required: /public/apiHttp.js
+// Required: /public/apiMessage.js
 
 // TODO: Fetch past messages until scrollable
 // TODO: Maintain scroll location upon loading past messages
-
-// ==================================================
-
-// Model
 
 // --------------------------------------------------
 
@@ -13,146 +10,6 @@
 
 const userApiUrl = '/api/user';
 const loginApiUrl = '/api/login';
-const messageSocketUrl = (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages';
-const messageBatchSize = 5;
-
-// --------------------------------------------------
-
-// Error events
-
-var errorCallbacks = [];
-
-const registerErrorCallback = (callback) => {
-  errorCallbacks.push(callback);
-};
-
-const handleError = (error) => {
-  for (const callback of errorCallbacks) {
-    callback(error);
-  }
-};
-
-// --------------------------------------------------
-
-// Establish websocket
-
-var messageSocket;
-
-if ('WebSocket' in window) {
-  messageSocket = new WebSocket(messageSocketUrl);
-
-  messageSocket.onmessage = (messageToClientWrapper) => {
-    let messageToClient = JSON.parse(messageToClientWrapper.data);
-    if (messageToClient.messagesData && messageToClient.messagesData.messages) {
-      for (let i = messageToClient.messagesData.messages.length - 1; i >= 0 ; i--) {
-        messageToClient.messagesData.messages[i].timestamp = new Date(messageToClient.messagesData.messages[i].timestamp);
-        apiMessage.addMessage(messageToClient.messagesData.messages[i]);
-      }
-    }
-  };
-
-  messageSocket.onopen = () => {
-    requestMostRecentMessages();
-  };
-
-  messageSocket.onclose = () => {
-    handleError('Unable to connect');
-  };
-}
-
-else {
-  handleError('Unable to connect');
-}
-
-// --------------------------------------------------
-
-// Send requests to server
-
-const requestPastMessages = () => {
-  if (!messageSocket || messageSocket.readyState != 1) {
-    handleError('Unable to fetch messages');
-    return false;
-  }
-  let messageToServer = {
-    'fetchMessagesData': {
-      'messageId': apiMessage.getOldestMessageId(),
-      'limit': messageBatchSize
-    }
-  };
-  messageSocket.send(JSON.stringify(messageToServer));
-  return true;
-};
-
-const requestMostRecentMessages = () => {
-  if (!messageSocket || messageSocket.readyState != 1) {
-    handleError('Unable to fetch messages');
-    return false;
-  }
-  let messageToServer = {
-    'fetchMessagesData': {
-      'limit': messageBatchSize
-    }
-  };
-  messageSocket.send(JSON.stringify(messageToServer));
-  return true;
-};
-
-const sendMessage = (messageContent) => {
-  if (!messageSocket || messageSocket.readyState != 1) {
-    handleError('Unable to send message');
-    return false;
-  }
-  let messageToServer = {
-    'sendMessageData': {
-      'content': messageContent
-    }
-  };
-  messageSocket.send(JSON.stringify(messageToServer));
-  return true;
-};
-
-// --------------------------------------------------
-
-// Log out
-
-const logOut = () => {
-  apiHttp.delete(loginApiUrl, null)
-  .then(() => {
-    location.href = '/login';
-  })
-  .catch(() => {
-    location.href = '/login';
-  });
-};
-
-// --------------------------------------------------
-
-// Fetch user name
-
-var userNameCallbacks = [];
-
-const registerUserNameCallback = (callback) => {
-  userNameCallbacks.push(callback);
-};
-
-const handleUserName = (userName) => {
-  for (const callback of userNameCallbacks) {
-    callback(userName);
-  }
-};
-
-apiHttp.read(userApiUrl, null)
-.then((user) => {
-  handleUserName(user.name);
-})
-.catch(() => {
-  handleError('Unable to fetch user name');
-  handleUserName('');
-});
-
-// ==================================================
-
-// View
 
 // --------------------------------------------------
 
@@ -181,8 +38,36 @@ const showOverlayNotification = (message, timeout) => {
   }, timeout);
 };
 
-registerErrorCallback((description) => {
+apiMessage.registerErrorDescriptionCallback((description) => {
   showOverlayNotification(description, 2000);
+});
+
+// --------------------------------------------------
+
+// Log out
+
+logoutSubmit.onclick = () => {
+  logoutSubmit.disabled = true;
+  apiHttp.delete(loginApiUrl, null)
+  .then(() => {
+    location.href = '/login';
+  })
+  .catch(() => {
+    location.href = '/login';
+  });
+};
+
+// --------------------------------------------------
+
+// Fetch user name
+
+apiHttp.read(userApiUrl, null)
+.then((user) => {
+  userName.innerHTML = user.name;
+})
+.catch(() => {
+  showOverlayNotification('Unable to fetch user name', 2000);
+  userName.innerHTML = '';
 });
 
 // --------------------------------------------------
@@ -196,7 +81,7 @@ chatComposerSubmit.onclick = () => {
     chatComposerSubmit.disabled = false;
     return;
   }
-  if (!sendMessage(messageContent)) {
+  if (!apiMessage.sendMessage(messageContent)) {
     chatComposerSubmit.disabled = false;
     return;
   }
@@ -212,23 +97,6 @@ chatComposerContent.addEventListener('keypress', (event) => {
 });
 
 chatComposerContent.focus();
-
-// --------------------------------------------------
-
-// Set user name text
-
-registerUserNameCallback((userName) => {
-  userName.innerHTML = userName;
-});
-
-// --------------------------------------------------
-
-// Logout button
-
-logoutSubmit.onclick = () => {
-  logoutSubmit.disabled = true;
-  logOut();
-};
 
 // --------------------------------------------------
 
@@ -267,14 +135,18 @@ const createOutgoingMessageView = (message) => {
   return container;
 };
 
-apiMessage.registerNewMessageCallback((index, message) => {
+apiMessage.registerNewMessageCallback((message, index) => {
   let chatEntry;
   if (message.outgoing) {
     chatEntry = createOutgoingMessageView(message);
   } else {
     chatEntry = createIncomingMessageView(message);
   }
-  chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
+  if (index < chatHistorySection.children.length) {
+    chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
+  } else {
+    chatHistorySection.append(chatEntry);
+  }
   scrollIfLocked();
 });
 
@@ -287,7 +159,7 @@ var scrollBottomLocked = true;
 chatHistorySection.onscroll = () => {
   scrollBottomLocked = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
   if (chatHistorySection.scrollTop == 0) {
-    requestPastMessages();
+    apiMessage.requestPastMessages();
   }
 };
 
@@ -306,3 +178,9 @@ const scrollIfLocked = () => {
     chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
   }
 };
+
+// --------------------------------------------------
+
+// Initialize message API
+
+apiMessage.initialize();

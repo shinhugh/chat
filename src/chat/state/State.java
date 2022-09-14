@@ -488,7 +488,7 @@ public class State {
 
   public Message[] getMessagesUntilTimestamp(long maxTimestamp, int limit)
   throws Exception {
-    if (maxTimestamp < 0 || limit < 0) {
+    if (maxTimestamp < 0 || limit < 1) {
       throw new IllegalArgumentException();
     }
 

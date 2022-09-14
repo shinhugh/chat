@@ -334,7 +334,7 @@ public class App {
         return result;
       }
 
-      if (limit < 0) {
+      if (limit < 1) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
@@ -399,7 +399,7 @@ public class App {
         return result;
       }
 
-      if (Utilities.nullOrEmpty(messageId) || limit < 0) {
+      if (Utilities.nullOrEmpty(messageId) || limit < 1) {
         result.failureReason = Result.FailureReason.IllegalArgument;
         return result;
       }
