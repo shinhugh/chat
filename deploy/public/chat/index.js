@@ -137,6 +137,7 @@ const createOutgoingMessageView = (message) => {
 
 apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
   let oldHeight = chatHistorySection.scrollHeight;
+  let scrollDistance = 0;
   for (const newMessageIndexPair of newMessageIndexPairs) {
     let chatEntry;
     if (newMessageIndexPair.message.outgoing) {
@@ -146,11 +147,12 @@ apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
     }
     if (newMessageIndexPair.index < chatHistorySection.children.length) {
       chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[newMessageIndexPair.index]);
+      scrollDistance += chatHistorySection.scrollHeight - oldHeight;
     } else {
       chatHistorySection.append(chatEntry);
     }
+    oldHeight = chatHistorySection.scrollHeight;
   }
-  let scrollDistance = chatHistorySection.scrollHeight - oldHeight;
   if (scrollBottomLocked) {
     chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
   } else {
