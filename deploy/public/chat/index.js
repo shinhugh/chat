@@ -195,10 +195,7 @@ chatHistorySection.onscroll = () => {
 
 const resizeObserver = new ResizeObserver(() => {
   if (scrollBottomLocked) {
-    chatHistorySection.scroll({
-      'top': chatHistorySection.scrollHeight,
-      'behavior': 'auto'
-    });
+    chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
   }
 });
 resizeObserver.observe(chatHistorySection);
