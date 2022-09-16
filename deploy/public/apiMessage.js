@@ -1,7 +1,7 @@
 const apiMessage = {
   'private': {
     'errorDescriptionCallbacks': [],
-    'newMessageIndexPairsCallbacks': [],
+    'newMessagesCallbacks': [],
     'socket': null,
     'socketUrl': (window.location.protocol == 'http:' ? 'ws://' : 'wss://') + window.location.host + '/api/messages',
     'socketCloseCount': 0,
@@ -17,9 +17,9 @@ const apiMessage = {
       }
     },
 
-    'invokeNewMessageIndexPairsCallbacks': (newMessageIndexPairs) => {
-      for (const callback of apiMessage.private.newMessageIndexPairsCallbacks) {
-        callback(newMessageIndexPairs);
+    'invokeNewMessagesCallbacks': (newMessages) => {
+      for (const callback of apiMessage.private.newMessagesCallbacks) {
+        callback(newMessages);
       }
     },
 
@@ -66,9 +66,8 @@ const apiMessage = {
           return 0;
         }
       });
-      const newMessageIndexPairs = [];
+      const newMessages = [];
       let lastAddedNode = null;
-      let lastAddedNodeIndex = 0;
       for (const message of messages) {
         const newMessageNode = {
           'message': message,
@@ -78,13 +77,10 @@ const apiMessage = {
         if (apiMessage.private.messageIds.has(newMessageNode.message.id)) {
           continue;
         }
-        let index = 0;
         if (lastAddedNode) {
           let currMessageNode = lastAddedNode.next;
-          index = lastAddedNodeIndex + 1;
           while (currMessageNode && newMessageNode.message.timestamp >= currMessageNode.message.timestamp) {
             currMessageNode = currMessageNode.next;
-            index++;
           }
           if (!currMessageNode) {
             newMessageNode.previous = apiMessage.private.latestMessageNode;
@@ -106,7 +102,6 @@ const apiMessage = {
             newMessageNode.previous = apiMessage.private.latestMessageNode;
             apiMessage.private.latestMessageNode.next = newMessageNode;
             apiMessage.private.latestMessageNode = newMessageNode;
-            index = apiMessage.private.messageCount;
           }
           else if (newMessageNode.message.timestamp < apiMessage.private.oldestMessageNode.message.timestamp) {
             newMessageNode.next = apiMessage.private.oldestMessageNode;
@@ -115,10 +110,8 @@ const apiMessage = {
           }
           else {
             let currMessageNode = apiMessage.private.latestMessageNode;
-            index = apiMessage.private.messageCount;
             while (newMessageNode.message.timestamp < currMessageNode.message.timestamp) {
               currMessageNode = currMessageNode.previous;
-              index--;
             }
             newMessageNode.previous = currMessageNode;
             newMessageNode.next = currMessageNode.next;
@@ -128,14 +121,10 @@ const apiMessage = {
         }
         apiMessage.private.messageIds.set(newMessageNode.message.id, true);
         apiMessage.private.messageCount++;
-        newMessageIndexPairs.push({
-          'message': newMessageNode.message,
-          'index': index
-        });
+        newMessages.push(newMessageNode.message);
         lastAddedNode = newMessageNode;
-        lastAddedNodeIndex = index;
       }
-      apiMessage.private.invokeNewMessageIndexPairsCallbacks(newMessageIndexPairs);
+      apiMessage.private.invokeNewMessagesCallbacks(newMessages);
     },
 
     'requestMostRecentMessages': (limit) => {
@@ -161,8 +150,8 @@ const apiMessage = {
     apiMessage.private.errorDescriptionCallbacks.push(callback);
   },
 
-  'registerNewMessageIndexPairsCallback': (callback) => {
-    apiMessage.private.newMessageIndexPairsCallbacks.push(callback);
+  'registerNewMessagesCallback': (callback) => {
+    apiMessage.private.newMessagesCallbacks.push(callback);
   },
 
   'getMessages': () => {

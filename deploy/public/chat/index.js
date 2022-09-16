@@ -102,6 +102,8 @@ chatComposerContent.focus();
 
 // Add new messages to UI
 
+const messageViewMessageMap = new WeakMap();
+
 const createMessageView = (message) => {
   if (message.outgoing) {
     return createOutgoingMessageView(message);
@@ -141,18 +143,26 @@ const createOutgoingMessageView = (message) => {
   return container;
 };
 
-apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
+apiMessage.registerNewMessagesCallback((newMessages) => {
   let oldHeight = chatHistorySection.scrollHeight;
   let scrollDistance = 0;
-  for (const newMessageIndexPair of newMessageIndexPairs) {
-    const chatEntry = createMessageView(newMessageIndexPair.message);
-    if (newMessageIndexPair.index < chatHistorySection.children.length) {
-      chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[newMessageIndexPair.index]);
-      scrollDistance += chatHistorySection.scrollHeight - oldHeight;
-    } else {
-      chatHistorySection.append(chatEntry);
+  for (const newMessage of newMessages) {
+    let index = 0;
+    for (const existingChatEntry of chatHistorySection.children) {
+      if (newMessage.timestamp < messageViewMessageMap.get(existingChatEntry).timestamp) {
+        break;
+      }
+      index++;
     }
-      oldHeight = chatHistorySection.scrollHeight;
+    const chatEntry = createMessageView(newMessage);
+    if (index == chatHistorySection.children.length) {
+      chatHistorySection.append(chatEntry);
+    } else {
+      chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
+      scrollDistance += chatHistorySection.scrollHeight - oldHeight;
+    }
+    oldHeight = chatHistorySection.scrollHeight;
+    messageViewMessageMap.set(chatEntry, newMessage);
   }
   if (scrollBottomLocked) {
     chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
