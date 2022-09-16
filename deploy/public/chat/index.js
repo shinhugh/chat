@@ -76,7 +76,7 @@ apiHttp.read(userApiUrl, null)
 
 chatComposerSubmit.onclick = () => {
   chatComposerSubmit.disabled = true;
-  let messageContent = chatComposerContent.value;
+  const messageContent = chatComposerContent.value;
   if (messageContent == '') {
     chatComposerSubmit.disabled = false;
     return;
@@ -102,8 +102,16 @@ chatComposerContent.focus();
 
 // Add new messages to UI
 
+const createMessageView = (message) => {
+  if (message.outgoing) {
+    return createOutgoingMessageView(message);
+  } else {
+    return createIncomingMessageView(message);
+  }
+}
+
 const createIncomingMessageView = (message) => {
-  let container = document.createElement('div');
+  const container = document.createElement('div');
   container.className = 'incoming_message_container';
   container.append(document.createElement('div'));
   container.lastChild.className = 'incoming_message_header';
@@ -112,8 +120,7 @@ const createIncomingMessageView = (message) => {
   container.lastChild.lastChild.innerHTML = message.userName;
   container.lastChild.append(document.createElement('p'));
   container.lastChild.lastChild.className = 'message_timestamp';
-  let timestampDate = new Date(message.timestamp);
-  container.lastChild.lastChild.innerHTML = timestampDate.toLocaleDateString() + ' ' + timestampDate.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
+  container.lastChild.lastChild.innerHTML = message.timestamp.toLocaleDateString() + ' ' + message.timestamp.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
   container.append(document.createElement('p'));
   container.lastChild.className = 'message_content';
   container.lastChild.innerHTML = message.content;
@@ -121,14 +128,13 @@ const createIncomingMessageView = (message) => {
 };
 
 const createOutgoingMessageView = (message) => {
-  let container = document.createElement('div');
+  const container = document.createElement('div');
   container.className = 'outgoing_message_container';
   container.append(document.createElement('div'));
   container.lastChild.className = 'outgoing_message_header';
   container.lastChild.append(document.createElement('p'));
   container.lastChild.lastChild.className = 'message_timestamp';
-  let timestampDate = new Date(message.timestamp);
-  container.lastChild.lastChild.innerHTML = timestampDate.toLocaleDateString() + ' ' + timestampDate.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
+  container.lastChild.lastChild.innerHTML = message.timestamp.toLocaleDateString() + ' ' + message.timestamp.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
   container.append(document.createElement('p'));
   container.lastChild.className = 'message_content';
   container.lastChild.innerHTML = message.content;
@@ -139,19 +145,14 @@ apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
   let oldHeight = chatHistorySection.scrollHeight;
   let scrollDistance = 0;
   for (const newMessageIndexPair of newMessageIndexPairs) {
-    let chatEntry;
-    if (newMessageIndexPair.message.outgoing) {
-      chatEntry = createOutgoingMessageView(newMessageIndexPair.message);
-    } else {
-      chatEntry = createIncomingMessageView(newMessageIndexPair.message);
-    }
+    const chatEntry = createMessageView(newMessageIndexPair.message);
     if (newMessageIndexPair.index < chatHistorySection.children.length) {
       chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[newMessageIndexPair.index]);
       scrollDistance += chatHistorySection.scrollHeight - oldHeight;
     } else {
       chatHistorySection.append(chatEntry);
     }
-    oldHeight = chatHistorySection.scrollHeight;
+      oldHeight = chatHistorySection.scrollHeight;
   }
   if (scrollBottomLocked) {
     chatHistorySection.scrollTop = chatHistorySection.scrollHeight;

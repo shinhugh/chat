@@ -1,7 +1,7 @@
 const apiHttp = {
   'read': async (url, queries) => {
     url = url + '?';
-    for (let key in queries) {
+    for (const key in queries) {
       url += key + '=' + queries[key] + '&';
     }
     url = url.slice(0, -1);
@@ -20,7 +20,7 @@ const apiHttp = {
 
   'create': async (url, queries, obj) => {
     url = url + '?';
-    for (let key in queries) {
+    for (const key in queries) {
       url += key + '=' + queries[key] + '&';
     }
     url = url.slice(0, -1);
@@ -39,7 +39,7 @@ const apiHttp = {
 
   'update': async (url, queries, obj) => {
     url = url + '?';
-    for (let key in queries) {
+    for (const key in queries) {
       url += key + '=' + queries[key] + '&';
     }
     url = url.slice(0, -1);
@@ -58,7 +58,7 @@ const apiHttp = {
 
   'delete': async (url, queries) => {
     url = url + '?';
-    for (let key in queries) {
+    for (const key in queries) {
       url += key + '=' + queries[key] + '&';
     }
     url = url.slice(0, -1);

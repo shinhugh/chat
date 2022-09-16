@@ -61,8 +61,8 @@ loginSubmit.onclick = () => {
     loginSubmit.disabled = false;
     return;
   }
-  let userName = loginUserName.value;
-  let userPw = loginUserPw.value;
+  const userName = loginUserName.value;
+  const userPw = loginUserPw.value;
   apiHttp.create(loginApiUrl, null, {
     'name': userName,
     'pw': userPw
@@ -102,8 +102,8 @@ signupSubmit.onclick = () => {
     signupSubmit.disabled = false;
     return;
   }
-  let userName = signupUserName.value;
-  let userPw = signupUserPw.value;
+  const userName = signupUserName.value;
+  const userPw = signupUserPw.value;
   apiHttp.create(userApiUrl, null, {
     'name': userName,
     'pw': userPw

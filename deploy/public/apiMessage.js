@@ -28,7 +28,7 @@ var apiMessage = {
         apiMessage.private.socket = new WebSocket(apiMessage.private.socketUrl);
 
         apiMessage.private.socket.onmessage = (messageToClientWrapper) => {
-          let messageToClient = JSON.parse(messageToClientWrapper.data);
+          const messageToClient = JSON.parse(messageToClientWrapper.data);
           if (messageToClient.messagesData && messageToClient.messagesData.messages) {
             for (const message of messageToClient.messagesData.messages) {
               message.timestamp = new Date(message.timestamp);
@@ -66,11 +66,11 @@ var apiMessage = {
           return 0;
         }
       });
-      let newMessageIndexPairs = [];
+      const newMessageIndexPairs = [];
       let lastAddedNode = null;
       let lastAddedNodeIndex = 0;
       for (const message of messages) {
-        let newMessageNode = {
+        const newMessageNode = {
           'message': message,
           'previous': null,
           'next': null
@@ -143,7 +143,7 @@ var apiMessage = {
         apiMessage.private.invokeErrorDescriptionCallbacks('Unable to fetch messages');
         return false;
       }
-      let messageToServer = {
+      const messageToServer = {
         'fetchMessagesData': {
           'limit': limit
         }
@@ -166,7 +166,7 @@ var apiMessage = {
   },
 
   'getMessages': () => {
-    let messageArray = [];
+    const messageArray = [];
     let currMessageNode = apiMessage.private.oldestMessageNode;
     while (currMessageNode) {
       messageArray.push(currMessageNode.message);
@@ -180,7 +180,7 @@ var apiMessage = {
       apiMessage.private.invokeErrorDescriptionCallbacks('Unable to fetch messages');
       return false;
     }
-    let messageToServer = {
+    const messageToServer = {
       'fetchMessagesData': {
         'messageId': apiMessage.private.oldestMessageNode ? apiMessage.private.oldestMessageNode.message.id : null,
         'limit': limit
@@ -195,7 +195,7 @@ var apiMessage = {
       apiMessage.private.invokeErrorDescriptionCallbacks('Unable to send message');
       return false;
     }
-    let messageToServer = {
+    const messageToServer = {
       'sendMessageData': {
         'content': messageContent
       }
