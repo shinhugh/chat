@@ -193,10 +193,15 @@ chatHistorySection.onscroll = () => {
   }
 };
 
+let chatHistorySectionOldHeight = chatHistorySection.offsetHeight;
+
 const resizeObserver = new ResizeObserver(() => {
   if (scrollBottomLocked) {
     chatHistorySection.scrollTop = chatHistorySection.scrollHeight;
+  } else {
+    chatHistorySection.scrollTop -= chatHistorySection.offsetHeight - chatHistorySectionOldHeight;
   }
+  chatHistorySectionOldHeight = chatHistorySection.offsetHeight;
 });
 resizeObserver.observe(chatHistorySection);
 
