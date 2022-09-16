@@ -146,12 +146,15 @@ const createOutgoingMessageView = (message) => {
 apiMessage.registerNewMessagesCallback((newMessages) => {
   let oldHeight = chatHistorySection.scrollHeight;
   let scrollDistance = 0;
-  for (const newMessage of newMessages) {
+  let chatHistorySectionPaddingString = window.getComputedStyle(chatHistorySection).getPropertyValue('padding-top');
+  let chatHistorySectionPaddingValue = Number(chatHistorySectionPaddingString.substring(0, chatHistorySectionPaddingString.length - 2));
+  for (let i = newMessages.length - 1; i >= 0; i--) {
+    const newMessage = newMessages[i];
     let index = 0;
     let incrementScrollDistance = false;
     for (const existingChatEntry of chatHistorySection.children) {
       if (newMessage.timestamp < messageViewMessageMap.get(existingChatEntry).timestamp) {
-        if (existingChatEntry.offsetTop < chatHistorySection.scrollTop) {
+        if ((existingChatEntry.offsetTop - chatHistorySectionPaddingValue) <= chatHistorySection.scrollTop) {
           incrementScrollDistance = true;
         }
         break;
