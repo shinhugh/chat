@@ -141,7 +141,7 @@ signupUserPw.addEventListener('keypress', (event) => {
 
 // Display an overlay notification
 
-var notificationTimeout;
+let notificationTimeout;
 
 const showOverlayNotification = (message, timeout) => {
   clearTimeout(notificationTimeout);

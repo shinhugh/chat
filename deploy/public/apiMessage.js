@@ -1,4 +1,4 @@
-var apiMessage = {
+const apiMessage = {
   'private': {
     'errorDescriptionCallbacks': [],
     'newMessageIndexPairsCallbacks': [],

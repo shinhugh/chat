@@ -26,7 +26,7 @@ const overlayNotification = document.getElementById('p_overlay_notification');
 
 // Overlay notification
 
-var notificationTimeout;
+let notificationTimeout;
 
 const showOverlayNotification = (message, timeout) => {
   clearTimeout(notificationTimeout);
@@ -165,7 +165,7 @@ apiMessage.registerNewMessageIndexPairsCallback((newMessageIndexPairs) => {
 
 // Manage chat history scrolling
 
-var scrollBottomLocked = true;
+let scrollBottomLocked = true;
 
 chatHistorySection.onscroll = () => {
   scrollBottomLocked = chatHistorySection.scrollTop + 1 >= (chatHistorySection.scrollHeight - chatHistorySection.offsetHeight);
