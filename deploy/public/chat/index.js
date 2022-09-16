@@ -148,8 +148,12 @@ apiMessage.registerNewMessagesCallback((newMessages) => {
   let scrollDistance = 0;
   for (const newMessage of newMessages) {
     let index = 0;
+    let incrementScrollDistance = false;
     for (const existingChatEntry of chatHistorySection.children) {
       if (newMessage.timestamp < messageViewMessageMap.get(existingChatEntry).timestamp) {
+        if (existingChatEntry.offsetTop < chatHistorySection.scrollTop) {
+          incrementScrollDistance = true;
+        }
         break;
       }
       index++;
@@ -159,6 +163,8 @@ apiMessage.registerNewMessagesCallback((newMessages) => {
       chatHistorySection.append(chatEntry);
     } else {
       chatHistorySection.insertBefore(chatEntry, chatHistorySection.children[index]);
+    }
+    if (incrementScrollDistance) {
       scrollDistance += chatHistorySection.scrollHeight - oldHeight;
     }
     oldHeight = chatHistorySection.scrollHeight;
