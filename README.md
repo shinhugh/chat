@@ -20,7 +20,7 @@ provided over WebSocket.
 
 All data are stored in a SQL relational database.
 
-The live app running on AWS EC2 is using Apache Tomcat and MySQL.
+The deployed server is using Apache Tomcat and MySQL.
 
 ---
 
