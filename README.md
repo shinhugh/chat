@@ -2,11 +2,11 @@
 
 A global chat room, comprised of the server-side code and the web client implementation.
 
+The back-end is currently running on an AWS EC2 instance. The web client is available **[here](http://ec2-13-57-232-164.us-west-1.compute.amazonaws.com)**.
+
+*None of the communication is currently encrypted; users should avoid using important credentials.*
+
 ![Demo](demo.gif)
-
-Currently running on an AWS EC2 instance. The web client is available **[here](http://ec2-13-57-232-164.us-west-1.compute.amazonaws.com)**.
-
-None of the communication is currently encrypted; users should avoid using important credentials.
 
 ---
 
