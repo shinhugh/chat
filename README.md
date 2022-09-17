@@ -8,8 +8,6 @@ Currently running on an AWS EC2 instance. The web client is available **[here](h
 
 None of the communication is currently encrypted; users should avoid using important credentials.
 
-Documentation is actively under progress!
-
 ---
 
 ## Technology
@@ -18,7 +16,14 @@ The back-end server is running a Java servlet container, exposing an HTTP API. A
 
 All data are stored in a SQL relational database.
 
-The deployed server is using Apache Tomcat and MySQL.
+The server has dependencies on the following external Java libraries:
+
+- Corresponding JDBC driver for the RDBMS used
+- Gson
+
+Of course, there are dependencies on the libraries provided by the servlet container as well (e.g. `HTTPServlet`).
+
+The server currently deployed on AWS is using Apache Tomcat and MySQL.
 
 ---
 
@@ -238,6 +243,8 @@ All of the application's data are stored in relational databases.
 
 ### Users
 
+To generate the hash, the user's password is concatenated with a randomly generated salt then passed into the SHA-256 algorithm. The hash and salt are stored within the user's entry so that the server can validate login attempts in the future.
+
 | id | name | hash | salt |
 | - | - | - | - |
 | mLBczvL4...oz | Abe | Y4786o8V...qR | VGFAhwVI...Tv |
@@ -254,6 +261,8 @@ CREATE TABLE users (
 
 ### Sessions
 
+The expiration value is given as the number of milliseconds since the Unix epoch. Each time that a session token is verified, its expiration is also checked. Optionally, the server can also run an automated task between certain time intervals where it purges all expired entries (e.g. via a `cron` job).
+
 | id | userId | expiration |
 | - | - | - |
 | KtF88V2i...5C | mLBczvL4...oz | 1663403598788 |
@@ -269,6 +278,8 @@ CREATE TABLE sessions (
 ```
 
 ### Messages
+
+The timestamp value is given as the number of milliseconds since the Unix epoch.
 
 | id | userId | timestamp | content |
 | - | - | - | - |
