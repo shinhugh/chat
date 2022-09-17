@@ -6,6 +6,8 @@ A global chat room, comprised of the server-side code and the web client impleme
 
 Currently running on an AWS EC2 instance. The web client is available **[here](http://ec2-13-57-232-164.us-west-1.compute.amazonaws.com)**.
 
+None of the communication is currently encrypted; users should avoid using important credentials.
+
 Documentation is actively under progress!
 
 ---
@@ -17,62 +19,6 @@ The back-end server is running a Java servlet container, exposing an HTTP API. A
 All data are stored in a SQL relational database.
 
 The deployed server is using Apache Tomcat and MySQL.
-
----
-
-## Database design
-
-All of the application's data are stored in relational databases.
-
-### Users
-
-| id | name | hash | salt |
-| - | - | - | - |
-| mLBczvL4...oz | Abe | Y4786o8V...qR | VGFAhwVI...Tv |
-| 0p5srKt4...Os | Bob | S8MRb5fO...71 | MNt5IAIg...Ul |
-
-```
-CREATE TABLE users (
-  id   VARCHAR(16) NOT NULL PRIMARY KEY,
-  name VARCHAR(16) NOT NULL UNIQUE,
-  hash VARCHAR(64) NOT NULL,
-  salt VARCHAR(16) NOT NULL
-);
-```
-
-### Sessions
-
-| id | userId | expiration |
-| - | - | - |
-| KtF88V2i...5C | mLBczvL4...oz | 1663403598788 |
-| EZQqtUFC...a3 | 0p5srKt4...Os | 1663410570130 |
-| MqrjTXlL...m0 | mLBczvL4...oz | 1663412916625 |
-
-```
-CREATE TABLE sessions (
-  id         VARCHAR(32)     NOT NULL PRIMARY KEY,
-  userId     VARCHAR(16)     NOT NULL,
-  expiration BIGINT UNSIGNED NOT NULL
-);
-```
-
-### Messages
-
-| id | userId | timestamp | content |
-| - | - | - | - |
-| SGZuQFjN...ay | 0p5srKt4...Os | 1663430617592 | Hello world! |
-| 5ceRlTvh...rJ | mLBczvL4...oz | 1663430621183 | Hi Bob! |
-| NspBi6jv...Bc | 0p5srKt4...Os | 1663430628539 | How are you? |
-| n9GtGtmH...bE | mLBczvL4...oz | 1663430630714 | I am well. |
-
-```
-CREATE TABLE messages (
-  id        VARCHAR(16)     NOT NULL PRIMARY KEY,
-  userId    VARCHAR(16)     NOT NULL,
-  timestamp BIGINT UNSIGNED NOT NULL,
-  content   VARCHAR(256)    NOT NULL
-);
-```
 
 ---
 
@@ -89,7 +35,7 @@ curl -v -X POST http://13.57.232.164/api/login -d "{\"name\":\"Abe\",\"pw\":\"ab
 ```
 
 ```
-POST /api/login/
+POST /api/login
 Content-Type: application/json
 Body:
 {
@@ -114,7 +60,7 @@ curl -v -X DELETE http://13.57.232.164/api/login -b "session=UEDfVQYxlIfxMk6bgWW
 ```
 
 ```
-DELETE /api/login/
+DELETE /api/login
 Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs
 ```
 
@@ -132,17 +78,24 @@ Set-Cookie: session=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 19
 Request:
 
 ```
-TODO
+curl -v -X GET http://13.57.232.164/api/user -b "session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs"
 ```
 
 ```
-TODO
+GET /api/user
+Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs
 ```
 
 Response:
 
 ```
-TODO
+200
+Content-Type: application/json
+Body:
+{
+  "id": "x6sAjV8WDXsBDD1d",
+  "name": "Abe"
+}
 ```
 
 **POST**: Create a new user.
@@ -150,17 +103,23 @@ TODO
 Request:
 
 ```
-TODO
+curl -v -X POST http://13.57.232.164/api/user -d "{\"name\":\"Abe\",\"pw\":\"abe\"}"
 ```
 
 ```
-TODO
+POST /api/user
+Content-Type: application/json
+Body:
+{
+  "name": "Abe",
+  "pw": "abe"
+}
 ```
 
 Response:
 
 ```
-TODO
+200
 ```
 
 **PUT**: Update the user's information/credentials, identified by the provided session token.
@@ -168,17 +127,23 @@ TODO
 Request:
 
 ```
-TODO
+curl -v -X PUT http://13.57.232.164/api/user -b "session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs" -d "{\"pw\":\"1234\"}"
 ```
 
 ```
-TODO
+PUT /api/user
+Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs
+Content-Type: application/json
+Body:
+{
+  "pw": "1234"
+}
 ```
 
 Response:
 
 ```
-TODO
+200
 ```
 
 **DELETE**: Delete the user, identified by the provided session token.
@@ -186,17 +151,18 @@ TODO
 Request:
 
 ```
-TODO
+curl -v -X DELETE http://13.57.232.164/api/user -b "session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs"
 ```
 
 ```
-TODO
+DELETE /api/user
+Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs
 ```
 
 Response:
 
 ```
-TODO
+200
 ```
 
 ---
@@ -262,4 +228,60 @@ Socket communication between the server and client is done through JSON format.
     ]
   }
 }
+```
+
+---
+
+## Database design
+
+All of the application's data are stored in relational databases.
+
+### Users
+
+| id | name | hash | salt |
+| - | - | - | - |
+| mLBczvL4...oz | Abe | Y4786o8V...qR | VGFAhwVI...Tv |
+| 0p5srKt4...Os | Bob | S8MRb5fO...71 | MNt5IAIg...Ul |
+
+```
+CREATE TABLE users (
+  id   VARCHAR(16) NOT NULL PRIMARY KEY,
+  name VARCHAR(16) NOT NULL UNIQUE,
+  hash VARCHAR(64) NOT NULL,
+  salt VARCHAR(16) NOT NULL
+);
+```
+
+### Sessions
+
+| id | userId | expiration |
+| - | - | - |
+| KtF88V2i...5C | mLBczvL4...oz | 1663403598788 |
+| EZQqtUFC...a3 | 0p5srKt4...Os | 1663410570130 |
+| MqrjTXlL...m0 | mLBczvL4...oz | 1663412916625 |
+
+```
+CREATE TABLE sessions (
+  id         VARCHAR(32)     NOT NULL PRIMARY KEY,
+  userId     VARCHAR(16)     NOT NULL,
+  expiration BIGINT UNSIGNED NOT NULL
+);
+```
+
+### Messages
+
+| id | userId | timestamp | content |
+| - | - | - | - |
+| SGZuQFjN...ay | 0p5srKt4...Os | 1663430617592 | Hello world! |
+| 5ceRlTvh...rJ | mLBczvL4...oz | 1663430621183 | Hi Bob! |
+| NspBi6jv...Bc | 0p5srKt4...Os | 1663430628539 | How are you? |
+| n9GtGtmH...bE | mLBczvL4...oz | 1663430630714 | I am well. |
+
+```
+CREATE TABLE messages (
+  id        VARCHAR(16)     NOT NULL PRIMARY KEY,
+  userId    VARCHAR(16)     NOT NULL,
+  timestamp BIGINT UNSIGNED NOT NULL,
+  content   VARCHAR(256)    NOT NULL
+);
 ```
