@@ -1,12 +1,10 @@
 # Chat
 
-A global chat room, comprised of the server-side code and the web client
-implementation.
+A global chat room, comprised of the server-side code and the web client implementation.
 
 ![Demo](demo.gif)
 
-Currently running on an AWS EC2 instance. The web client is available
-**[here](http://ec2-13-57-232-164.us-west-1.compute.amazonaws.com)**.
+Currently running on an AWS EC2 instance. The web client is available **[here](http://ec2-13-57-232-164.us-west-1.compute.amazonaws.com)**.
 
 Documentation is actively under progress!
 
@@ -14,9 +12,7 @@ Documentation is actively under progress!
 
 ## Technology
 
-The back-end server is running a Java servlet container, exposing an HTTP API.
-Authentication and user operations are done over HTTP. Chat functionality is
-provided over WebSocket.
+The back-end server is running a Java servlet container, exposing an HTTP API. Authentication and user operations are done over HTTP. Chat functionality is provided over WebSocket.
 
 All data are stored in a SQL relational database.
 
@@ -84,31 +80,124 @@ CREATE TABLE messages (
 
 ### `/api/login`
 
-**POST**: Log in and generate a session token
+**POST**: Log in and generate a session token.
 
-TODO: Example
+Request:
 
-**DELETE**: Log out and invalidate a session token
+```
+curl -v -X POST http://13.57.232.164/api/login -d "{\"name\":\"Abe\",\"pw\":\"abe\"}"
+```
 
-TODO: Example
+```
+POST /api/login/
+Content-Type: application/json
+Body:
+{
+  "name": "Abe",
+  "pw": "abe"
+}
+```
+
+Response:
+
+```
+200
+Set-Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs; Path=/; SameSite=Strict; Max-Age=86399; Expires=Sun, 18 Sep 2022 18:26:33 GMT
+```
+
+**DELETE**: Log out and invalidate a session token.
+
+Request:
+
+```
+curl -v -X DELETE http://13.57.232.164/api/login -b "session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs"
+```
+
+```
+DELETE /api/login/
+Cookie: session=UEDfVQYxlIfxMk6bgWWdLbJcxbaczIQs
+```
+
+Response:
+
+```
+200
+Set-Cookie: session=; Path=/; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 12:00:00 GMT
+```
 
 ### `/api/user`
 
-**GET**: Get the user's information, identified by the provided session token
+**GET**: Get the user's information, identified by the provided session token.
 
-TODO: Example
+Request:
 
-**POST**: Create a new user
+```
+TODO
+```
 
-TODO: Example
+```
+TODO
+```
 
-**PUT**: Update the user's information/credentials, identified by the provided session token
+Response:
 
-TODO: Example
+```
+TODO
+```
 
-**DELETE**: Delete the user, identified by the provided session token
+**POST**: Create a new user.
 
-TODO: Example
+Request:
+
+```
+TODO
+```
+
+```
+TODO
+```
+
+Response:
+
+```
+TODO
+```
+
+**PUT**: Update the user's information/credentials, identified by the provided session token.
+
+Request:
+
+```
+TODO
+```
+
+```
+TODO
+```
+
+Response:
+
+```
+TODO
+```
+
+**DELETE**: Delete the user, identified by the provided session token.
+
+Request:
+
+```
+TODO
+```
+
+```
+TODO
+```
+
+Response:
+
+```
+TODO
+```
 
 ---
 
@@ -116,18 +205,11 @@ TODO: Example
 
 ### `/api/messages`
 
-The initial HTTP handshake request must contain a valid session token. This
-enables the server to authenticate and identify the user. Failure to provide a
-valid token will immediately terminate the connection. Once the socket is
-established, the client no longer needs to send the session token in any form,
-but the server verifies the cached session token before each time that an
-incoming message is processed. This prevents sockets from outliving expired
-session tokens.
+The initial WebSocket handshake request must contain a valid session token. This enables the server to authenticate and identify the user. Failure to provide a valid token will immediately terminate the connection. Once the socket is established, the client no longer needs to send the session token in any form. The server verifies the cached session token before each time that an incoming message is processed. This prevents sockets from outliving expired session tokens.
 
 Socket communication between the server and client is done through JSON format.
 
-**Message to server**: Fetch the most recent messages, specifying the maximum
-batch size
+**Message to server**: Fetch the most recent messages, specifying the maximum batch size.
 
 ```
 {
@@ -137,8 +219,7 @@ batch size
 }
 ```
 
-**Message to server**: Fetch the most recent messages with timestamps earlier
-than that of the specified message, specifying the maximum batch size
+**Message to server**: Fetch the most recent messages with timestamps earlier than that of the specified message, specifying the maximum batch size.
 
 ```
 {
@@ -149,7 +230,7 @@ than that of the specified message, specifying the maximum batch size
 }
 ```
 
-**Message to server**: Send a new message
+**Message to server**: Send a new message.
 
 ```
 {
@@ -159,7 +240,7 @@ than that of the specified message, specifying the maximum batch size
 }
 ```
 
-**Message to client**: Receive messages
+**Message to client**: Receive messages.
 
 ```
 {
