@@ -1,8 +1,6 @@
 // Required: /public/apiHttp.js
 // Required: /public/apiMessage.js
 
-// TODO: Fetch past messages until scrollable
-
 // --------------------------------------------------
 
 // Constants
@@ -209,4 +207,12 @@ resizeObserver.observe(chatHistorySection);
 
 // Initialize message API
 
-apiMessage.initialize(batchSizeLimit);
+chatHistorySection.append(createMessageView({
+  'outgoing': false,
+  'userName': '...',
+  'timestamp': new Date(0),
+  'content': '...'
+}));
+const initialBatchSize = Math.ceil(chatHistorySection.offsetHeight / chatHistorySection.children[0].offsetHeight) + 1;
+chatHistorySection.innerHTML = '';
+apiMessage.initialize(initialBatchSize);
